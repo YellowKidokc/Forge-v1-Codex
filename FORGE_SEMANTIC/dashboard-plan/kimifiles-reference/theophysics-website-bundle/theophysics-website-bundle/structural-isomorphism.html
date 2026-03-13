@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Structural Isomorphism — Proof by Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+<style>
+:root {
+  --bg: #0a0b0f;
+  --bg-card: #12141c;
+  --bg-row: #0e1018;
+  --border: #1e2233;
+  --border-active: #2a3050;
+  --text: #e8e6e1;
+  --text2: #8a8d9b;
+  --text3: #555869;
+  --gold: #d4a853;
+  --phys: #38bdf8;
+  --theo: #a78bfa;
+  --bif: #34d399;
+  --pair-line: #d4a853;
+  --pass: #2dd4a0;
+  --match: #2dd4a0;
+  --wall: #f59e0b;
+  --eq-bg: rgba(255,255,255,0.03);
+  --phys-bg: rgba(56,189,248,0.04);
+  --phys-border: rgba(56,189,248,0.15);
+  --theo-bg: rgba(167,139,250,0.04);
+  --theo-border: rgba(167,139,250,0.15);
+  --bif-bg: rgba(52,211,153,0.04);
+  --bif-border: rgba(52,211,153,0.15);
+  --test-bg: rgba(212,168,83,0.04);
+  --test-border: rgba(212,168,83,0.15);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; background:var(--bg); }
+body { font-family:'DM Sans',sans-serif; color:var(--text); background:var(--bg); min-height:100vh; }
+
+body::before {
+  content:'';position:fixed;inset:0;
+  background:radial-gradient(ellipse at 20% 0%, rgba(56,189,248,0.03) 0%, transparent 50%),
+             radial-gradient(ellipse at 80% 100%, rgba(167,139,250,0.03) 0%, transparent 50%);
+  pointer-events:none;z-index:0;
+}
+
+.container { position:relative;z-index:1;max-width:1300px;margin:0 auto;padding:40px 20px 120px; }
+
+/* Header */
+.header { text-align:center;margin-bottom:48px;padding-bottom:40px;border-bottom:1px solid var(--border); }
+.header-label { font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:4px;text-transform:uppercase;color:var(--gold);margin-bottom:16px; }
+.header h1 { font-family:'Cormorant Garamond',serif;font-size:clamp(32px,4.5vw,52px);font-weight:700;line-height:1.15;margin-bottom:14px; }
+.header .sub { font-size:15px;color:var(--text2);max-width:750px;margin:0 auto;line-height:1.7; }
+
+/* Master Equation Box */
+.master-eq {
+  background:var(--bg-card);border:1px solid var(--border);border-radius:12px;
+  padding:32px;margin-bottom:48px;text-align:center;
+}
+.master-eq .eq-label { font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:16px; }
+.master-eq .eq-main { font-family:'Cormorant Garamond',serif;font-size:28px;color:var(--text);margin-bottom:16px;line-height:1.6; }
+.master-eq .eq-desc { font-size:13px;color:var(--text2);line-height:1.7;max-width:700px;margin:0 auto; }
+
+/* Legend */
+.legend {
+  display:flex;flex-wrap:wrap;gap:12px 28px;justify-content:center;margin-bottom:48px;
+  padding:18px 24px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;
+}
+.leg-item { display:flex;align-items:center;gap:8px;font-size:12px;font-family:'JetBrains Mono',monospace; }
+.leg-dot { width:12px;height:12px;border-radius:3px; }
+
+/* Thesis */
+.thesis { background:var(--test-bg);border:1px solid var(--test-border);border-radius:10px;padding:24px 28px;margin-bottom:48px; }
+.thesis h3 { font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--gold);margin-bottom:12px; }
+.thesis p { font-size:14px;color:var(--text2);line-height:1.7; }
+.thesis strong { color:var(--text); }
+
+/* PAIR NODE */
+.pair {
+  margin-bottom:36px;border:1px solid var(--border);border-radius:12px;overflow:hidden;
+  transition:border-color 0.3s;
+}
+.pair:hover { border-color:var(--border-active); }
+.pair.open { border-color:var(--pair-line); }
+
+.pair-header {
+  display:flex;align-items:center;gap:16px;padding:20px 24px;cursor:pointer;
+  background:var(--bg-card);user-select:none;transition:background 0.2s;
+}
+.pair-header:hover { background:rgba(255,255,255,0.02); }
+
+.pair-id {
+  font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600;
+  color:var(--gold);flex-shrink:0;min-width:64px;
+}
+.pair-title {
+  font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;flex:1;
+}
+.pair-vars {
+  font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text3);flex-shrink:0;
+}
+.pair-arrow { color:var(--text3);font-size:18px;transition:transform 0.3s;flex-shrink:0; }
+.pair.open .pair-arrow { transform:rotate(180deg); }
+
+.pair-body { display:none;padding:0; }
+.pair.open .pair-body { display:block; }
+
+/* Two-column: Physics | Theology */
+.columns {
+  display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:1px solid var(--border);
+}
+.col {
+  padding:24px;min-height:200px;
+}
+.col:first-child { border-right:1px solid var(--border); }
+.col.phys { background:var(--phys-bg); }
+.col.theo { background:var(--theo-bg); }
+
+.col-label {
+  font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;
+  margin-bottom:16px;display:flex;align-items:center;gap:8px;
+}
+.col.phys .col-label { color:var(--phys); }
+.col.theo .col-label { color:var(--theo); }
+
+.eq-block {
+  background:var(--eq-bg);border-radius:8px;padding:16px 20px;margin-bottom:16px;
+  font-family:'JetBrains Mono',monospace;font-size:14px;line-height:1.8;
+  border:1px solid rgba(255,255,255,0.06);
+}
+.eq-block .eq-name {
+  font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text3);
+  text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;
+}
+
+.col-text { font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:12px; }
+.col-text strong { color:var(--text);font-weight:600; }
+
+/* Variable mapping row */
+.var-map {
+  border-top:1px solid var(--border);
+  display:grid;grid-template-columns:1fr 1fr;gap:0;
+  font-family:'JetBrains Mono',monospace;font-size:12px;
+}
+.var-map-side { padding:12px 24px; }
+.var-map-side:first-child { border-right:1px solid var(--border);background:var(--phys-bg); }
+.var-map-side:last-child { background:var(--theo-bg); }
+.var-map-label { font-size:10px;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px; }
+.var-map-side:first-child .var-map-label { color:var(--phys); }
+.var-map-side:last-child .var-map-label { color:var(--theo); }
+.var-entry { color:var(--text2);margin-bottom:3px; }
+.var-entry span { color:var(--text);font-weight:600; }
+
+/* Structural match badge */
+.match-bar {
+  border-top:1px solid var(--border);padding:12px 24px;text-align:center;
+  background:rgba(45,212,160,0.04);
+}
+.match-badge {
+  font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;
+  color:var(--match);letter-spacing:1px;
+}
+
+/* Bifurcation section */
+.bifurcation {
+  border-top:1px solid var(--border);padding:24px;background:var(--bif-bg);
+}
+.bif-label {
+  font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:2px;
+  text-transform:uppercase;color:var(--bif);margin-bottom:12px;
+  display:flex;align-items:center;gap:8px;
+}
+.bif-content { font-size:13px;color:var(--text2);line-height:1.7; }
+.bif-content strong { color:var(--text); }
+
+.bif-split {
+  display:grid;grid-template-columns:1fr auto 1fr;gap:16px;margin-top:16px;align-items:center;
+}
+.bif-pole {
+  padding:14px 18px;border-radius:8px;font-size:12px;line-height:1.6;
+}
+.bif-pole.sin-pole {
+  background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.15);
+}
+.bif-pole.grace-pole {
+  background:rgba(45,212,160,0.06);border:1px solid rgba(45,212,160,0.15);
+}
+.bif-pole .pole-label {
+  font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1.5px;
+  text-transform:uppercase;margin-bottom:6px;
+}
+.bif-pole.sin-pole .pole-label { color:#f87171; }
+.bif-pole.grace-pole .pole-label { color:var(--pass); }
+.bif-divider {
+  font-family:'Cormorant Garamond',serif;font-size:28px;color:var(--gold);
+  text-align:center;
+}
+
+/* Isomorphism Test */
+.iso-test {
+  border-top:1px solid var(--border);padding:20px 24px;background:var(--test-bg);
+}
+.iso-label {
+  font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:2px;
+  text-transform:uppercase;color:var(--gold);margin-bottom:10px;
+}
+.iso-item { font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:6px; }
+.iso-item strong { color:var(--text); }
+
+/* Time Wall */
+.time-wall {
+  margin-bottom:36px;border:2px solid var(--wall);border-radius:12px;overflow:hidden;
+}
+.tw-header {
+  padding:20px 24px;background:rgba(245,158,11,0.06);display:flex;align-items:center;gap:16px;
+}
+.tw-icon { font-size:28px; }
+.tw-title { font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600; }
+.tw-body { padding:24px;font-size:14px;color:var(--text2);line-height:1.8; }
+.tw-body strong { color:var(--text); }
+
+/* Salvation Section */
+.salvation {
+  margin-top:48px;padding:32px;background:var(--bg-card);border:1px solid var(--gold);
+  border-radius:12px;
+}
+.salvation h2 { font-family:'Cormorant Garamond',serif;font-size:28px;color:var(--gold);margin-bottom:16px;text-align:center; }
+.salvation p { font-size:14px;color:var(--text2);line-height:1.8;margin-bottom:12px; }
+.salvation strong { color:var(--text); }
+
+/* Scoreboard */
+.scoreboard {
+  margin-top:48px;padding:32px;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;
+}
+.scoreboard h2 { font-family:'Cormorant Garamond',serif;font-size:28px;margin-bottom:20px;text-align:center; }
+.score-grid { display:grid;grid-template-columns:repeat(5,1fr);gap:12px; }
+.score-card {
+  padding:16px;border-radius:8px;text-align:center;border:1px solid var(--border);
+  background:var(--bg-row);
+}
+.score-card .sc-pair { font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--gold);margin-bottom:4px; }
+.score-card .sc-names { font-size:12px;color:var(--text2);margin-bottom:8px; }
+.score-card .sc-status { font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;padding:3px 8px;border-radius:4px;display:inline-block; }
+.score-card .sc-status.verified { background:rgba(45,212,160,0.12);color:var(--pass); }
+.score-card .sc-status.walled { background:rgba(245,158,11,0.12);color:var(--wall); }
+
+/* Footer */
+.footer {
+  margin-top:48px;text-align:center;padding:24px;border-top:1px solid var(--border);
+}
+.footer p { font-size:12px;color:var(--text3);line-height:1.7; }
+.footer strong { color:var(--text2); }
+
+@media(max-width:800px) {
+  .columns { grid-template-columns:1fr; }
+  .col:first-child { border-right:none;border-bottom:1px solid var(--border); }
+  .var-map { grid-template-columns:1fr; }
+  .var-map-side:first-child { border-right:none;border-bottom:1px solid var(--border); }
+  .bif-split { grid-template-columns:1fr;gap:8px; }
+  .bif-divider { transform:rotate(90deg); }
+  .score-grid { grid-template-columns:repeat(2,1fr); }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <div class="header-label">Theophysics · Structural Proof</div>
+  <h1>The Structural Isomorphism</h1>
+  <p class="sub">Physics and theology are not analogies of each other. They are two measurement frames projected from the same substrate. The proof is not argumentative — it is architectural. Swap the variable labels. The architecture stands.</p>
+</div>
+
+<!-- Master Equation -->
+<div class="master-eq">
+  <div class="eq-label">The Master Equation</div>
+  <div class="eq-main">$\chi = \iiint (G \cdot M \cdot E \cdot S \cdot T \cdot K \cdot R \cdot Q \cdot F \cdot C)\, dx\, dy\, dt$</div>
+  <div class="eq-desc">
+    Ten variables. Five symmetry pairs. Each pair contains an internal revolution — a sin-pole and a grace-pole — generated by the same structural bifurcation that physics underwent historically. The physics equations on the left and the spiritual equations on the right are not translations. They are the same equation read in two measurement frames.
+  </div>
+</div>
+
+<!-- Legend -->
+<div class="legend">
+  <div class="leg-item"><div class="leg-dot" style="background:var(--phys)"></div> Physics Frame</div>
+  <div class="leg-item"><div class="leg-dot" style="background:var(--theo)"></div> Theology Frame</div>
+  <div class="leg-item"><div class="leg-dot" style="background:var(--bif)"></div> Bifurcation (sin ↔ grace)</div>
+  <div class="leg-item"><div class="leg-dot" style="background:var(--gold)"></div> Isomorphism Test</div>
+  <div class="leg-item" style="color:var(--wall)">⚠ Time Wall</div>
+</div>
+
+<!-- Thesis -->
+<div class="thesis">
+  <h3>The Falsification Criterion</h3>
+  <p>If the isomorphism is real, then substituting spiritual variables into physics equations must preserve <strong>all mathematical relationships</strong> — same topology, same falloff behavior, same boundary conditions, same conservation laws. If the structure breaks anywhere, the whole thing fails. You switch out the variables, but the structures stay the same. <strong>That's how you know.</strong></p>
+</div>
+
+<!-- ═══════════════════ PAIR 1: (G, R) ═══════════════════ -->
+<div class="pair open" data-pair="1">
+  <div class="pair-header" onclick="togglePair(this)">
+    <div class="pair-id">Pair I</div>
+    <div class="pair-title">Gravity ↔ Grace &nbsp;·&nbsp; Resurrection ↔ Expansion</div>
+    <div class="pair-vars">(G, R)</div>
+    <div class="pair-arrow">▼</div>
+  </div>
+  <div class="pair-body">
+    <div class="columns">
+      <div class="col phys">
+        <div class="col-label"><div class="leg-dot" style="background:var(--phys)"></div> Physics Frame</div>
+        <div class="eq-block">
+          <div class="eq-name">Newton — Gravitational Attraction</div>
+          $F = G\dfrac{m_1 m_2}{r^2}$
+        </div>
+        <div class="col-text">Attractive force. Falls off with inverse-square distance. Objects pulled toward mass. <strong>Escape velocity</strong> $v_e = \sqrt{2GM/r}$ defines the threshold energy to break free.</div>
+        <div class="eq-block">
+          <div class="eq-name">Einstein — Spacetime Curvature</div>
+          $G_{\mu\nu} + \Lambda g_{\mu\nu} = \dfrac{8\pi G}{c^4} T_{\mu\nu}$
+        </div>
+        <div class="col-text">Not a force — a geometry. Mass-energy tells spacetime how to curve; spacetime tells mass-energy how to move. Objects follow geodesics. <strong>The landscape itself bends.</strong></div>
+      </div>
+      <div class="col theo">
+        <div class="col-label"><div class="leg-dot" style="background:var(--theo)"></div> Theology Frame</div>
+        <div class="eq-block">
+          <div class="eq-name">Sin — Spiritual Attraction</div>
+          $F_{\text{sin}} = G_s \dfrac{m_{\text{self}} \cdot m_{\text{world}}}{r_{\text{proximity}}^2}$
+        </div>
+        <div class="col-text">Attractive force. Falls off with inverse-square distance from the source. Souls pulled toward spiritual mass (self, world, desire). <strong>Spiritual escape velocity</strong> $v_e = \sqrt{2G_s M_{\text{sin}}/r}$ — the threshold faith-energy to break free.</div>
+        <div class="eq-block">
+          <div class="eq-name">Grace — Moral Landscape Curvature</div>
+          $\mathcal{G}_{\mu\nu} + \Lambda_{\text{grace}}\, g_{\mu\nu} = \dfrac{8\pi G_s}{c_s^4}\, \mathcal{T}_{\mu\nu}$
+        </div>
+        <div class="col-text">Not a force — a geometry. Grace reshapes the moral landscape so the natural path leads home. You don't fight toward it. <strong>You follow the curvature.</strong></div>
+      </div>
+    </div>
+
+    <div class="var-map">
+      <div class="var-map-side">
+        <div class="var-map-label">Physics Variables</div>
+        <div class="var-entry"><span>G</span> → gravitational constant</div>
+        <div class="var-entry"><span>m</span> → mass</div>
+        <div class="var-entry"><span>r</span> → distance</div>
+        <div class="var-entry"><span>$T_{\mu\nu}$</span> → stress-energy tensor</div>
+        <div class="var-entry"><span>$\Lambda$</span> → cosmological constant</div>
+      </div>
+      <div class="var-map-side">
+        <div class="var-map-label">Theology Variables</div>
+        <div class="var-entry"><span>$G_s$</span> → spiritual coupling constant</div>
+        <div class="var-entry"><span>$m_{\text{self}}$</span> → weight of self-orientation</div>
+        <div class="var-entry"><span>$r_{\text{proximity}}$</span> → relational distance</div>
+        <div class="var-entry"><span>$\mathcal{T}_{\mu\nu}$</span> → moral-energy tensor</div>
+        <div class="var-entry"><span>$\Lambda_{\text{grace}}$</span> → grace constant (negentropy)</div>
+      </div>
+    </div>
+
+    <div class="match-bar">
+      <div class="match-badge">✓ STRUCTURAL MATCH — topology, inverse-square falloff, escape velocity threshold, geodesic behavior all preserved</div>
+    </div>
+
+    <div class="bifurcation">
+      <div class="bif-label"><div class="leg-dot" style="background:var(--bif)"></div> The Internal Bifurcation — Why This Pair Exists</div>
+      <div class="bif-content">Physics itself bifurcated gravity: Newton saw a <strong>pull</strong>, Einstein saw a <strong>curvature</strong>. The same variable (G) contains both poles. This internal revolution IS the sin↔grace split — and it is why the (G, R) symmetry pair is structurally required, not arbitrary.</div>
+      <div class="bif-split">
+        <div class="bif-pole sin-pole">
+          <div class="pole-label">Sin Pole — Newton's Pull</div>
+          Attractive force toward mass. The more mass, the harder to escape. Deterministic trajectory unless escape velocity exceeded. <strong>Bound orbit = bondage.</strong>
+        </div>
+        <div class="bif-divider">↔</div>
+        <div class="bif-pole grace-pole">
+          <div class="pole-label">Grace Pole — Einstein's Curvature</div>
+          The landscape itself bends toward home. No force required — the geometry does the work. Geodesics are the paths of least resistance through curved moral space. <strong>Curvature = redemption architecture.</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="iso-test">
+      <div class="iso-label">⑦ Isomorphism Test — Falsifiable Predictions</div>
+      <div class="iso-item">1. Spiritual attraction should weaken with <strong>relational distance</strong> from the sin-source, following inverse-square behavior.</div>
+      <div class="iso-item">2. There should exist a <strong>threshold faith-energy</strong> (escape velocity) below which the soul cannot break free from habitual sin.</div>
+      <div class="iso-item">3. Grace should operate as <strong>landscape curvature</strong>, not point-force — meaning communities (large-scale curvature) matter more than individual effort.</div>
+      <div class="iso-item">4. <strong>Cosmological expansion</strong> (R = Resurrection) should mirror: the universe expands to create room for new order, just as resurrection expands being beyond entropy.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ PAIR 2: (M, S) ═══════════════════ -->
+<div class="pair" data-pair="2">
+  <div class="pair-header" onclick="togglePair(this)">
+    <div class="pair-id">Pair II</div>
+    <div class="pair-title">Matter ↔ Moral Mass &nbsp;·&nbsp; Entropy ↔ Sin</div>
+    <div class="pair-vars">(M, S)</div>
+    <div class="pair-arrow">▼</div>
+  </div>
+  <div class="pair-body">
+    <div class="columns">
+      <div class="col phys">
+        <div class="col-label"><div class="leg-dot" style="background:var(--phys)"></div> Physics Frame</div>
+        <div class="eq-block">
+          <div class="eq-name">Boltzmann — Entropy</div>
+          $S = k_B \ln \Omega$
+        </div>
+        <div class="col-text">Entropy counts accessible microstates. Closed systems trend toward maximum disorder. The Second Law: $\Delta S \geq 0$. <strong>Things fall apart.</strong></div>
+        <div class="eq-block">
+          <div class="eq-name">Open System — Negentropy</div>
+          $\dfrac{dS}{dt} = \sigma - J_S$
+        </div>
+        <div class="col-text">Open systems can decrease local entropy by exporting it. Life is a negentropic process. External energy input maintains order against the thermodynamic gradient.</div>
+      </div>
+      <div class="col theo">
+        <div class="col-label"><div class="leg-dot" style="background:var(--theo)"></div> Theology Frame</div>
+        <div class="eq-block">
+          <div class="eq-name">Spiritual Entropy — Sin as Disorder</div>
+          $S_{\text{spiritual}} = k_s \ln \Omega_{\text{accessible}}$
+        </div>
+        <div class="col-text">Sin is spiritual entropy — the tendency of souls toward maximum disorder when isolated from the coherence source. Closed spiritual systems decay. <strong>Romans 6:23.</strong></div>
+        <div class="eq-block">
+          <div class="eq-name">Grace — Spiritual Negentropy</div>
+          $G_{\text{spiritual}} = -\dfrac{dS}{dt} \cdot \Phi_{\text{divine}}$
+        </div>
+        <div class="col-text">Grace is the external energy input that reverses spiritual entropy. The soul is an open system — it can receive negentropy from outside itself. <strong>The law can't save. Grace can.</strong></div>
+      </div>
+    </div>
+
+    <div class="var-map">
+      <div class="var-map-side">
+        <div class="var-map-label">Physics Variables</div>
+        <div class="var-entry"><span>S</span> → thermodynamic entropy</div>
+        <div class="var-entry"><span>$\Omega$</span> → accessible microstates</div>
+        <div class="var-entry"><span>$k_B$</span> → Boltzmann constant</div>
+        <div class="var-entry"><span>$J_S$</span> → entropy flux (exported)</div>
+      </div>
+      <div class="var-map-side">
+        <div class="var-map-label">Theology Variables</div>
+        <div class="var-entry"><span>$S_{\text{sp}}$</span> → spiritual disorder</div>
+        <div class="var-entry"><span>$\Omega_{\text{acc}}$</span> → accessible moral states</div>
+        <div class="var-entry"><span>$k_s$</span> → spiritual coupling constant</div>
+        <div class="var-entry"><span>$\Phi_{\text{divine}}$</span> → divine energy source</div>
+      </div>
+    </div>
+
+    <div class="match-bar">
+      <div class="match-badge">✓ STRUCTURAL MATCH — Second Law behavior, open/closed system dynamics, negentropy mechanism all preserved</div>
+    </div>
+
+    <div class="bifurcation">
+      <div class="bif-label"><div class="leg-dot" style="background:var(--bif)"></div> The Internal Bifurcation</div>
+      <div class="bif-content">Physics bifurcated matter: classical matter is <strong>fixed, dead, deterministic</strong>. Quantum matter is <strong>probabilistic, alive with potential, exists in superposition until observed</strong>. The particle→wave-function revolution IS the body→spirit revolution.</div>
+      <div class="bif-split">
+        <div class="bif-pole sin-pole">
+          <div class="pole-label">Sin Pole — Classical Dead Matter</div>
+          Fixed state. Deterministic trajectory. No internal freedom. Entropy grinds it down. The corpse obeys thermodynamics perfectly. <strong>Dead matter = dead soul.</strong>
+        </div>
+        <div class="bif-divider">↔</div>
+        <div class="bif-pole grace-pole">
+          <div class="pole-label">Grace Pole — Quantum Living Potential</div>
+          Superposition of possibilities. Not determined until observed. The wave function is alive — it holds all potential simultaneously until faith-observation collapses it into actuality. <strong>Incarnation symmetry.</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="iso-test">
+      <div class="iso-label">⑦ Isomorphism Test</div>
+      <div class="iso-item">1. Isolated spiritual communities should show <strong>measurable entropy increase</strong> — fragmentation, loss of doctrine, moral decay — matching thermodynamic predictions.</div>
+      <div class="iso-item">2. Grace should function as <strong>external energy input</strong>, not internal self-correction — meaning self-help fails where grace succeeds.</div>
+      <div class="iso-item">3. The <strong>LLC term</strong> $-S \cdot \chi(t)$ should predict that entropy directly opposes coherence proportionally.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ PAIR 3: (E, F) ═══════════════════ -->
+<div class="pair" data-pair="3">
+  <div class="pair-header" onclick="togglePair(this)">
+    <div class="pair-id">Pair III</div>
+    <div class="pair-title">Energy ↔ Activation &nbsp;·&nbsp; Faith ↔ Measurement</div>
+    <div class="pair-vars">(E, F)</div>
+    <div class="pair-arrow">▼</div>
+  </div>
+  <div class="pair-body">
+    <div class="columns">
+      <div class="col phys">
+        <div class="col-label"><div class="leg-dot" style="background:var(--phys)"></div> Physics Frame</div>
+        <div class="eq-block">
+          <div class="eq-name">Quantum Measurement — Born Rule</div>
+          $P(a_i) = |\langle a_i | \psi \rangle|^2$
+        </div>
+        <div class="col-text">Probability of outcome = amplitude squared. Nothing is actual until measured. The act of observation selects one state from the superposition. <strong>Measurement makes reality.</strong></div>
+        <div class="eq-block">
+          <div class="eq-name">Mass-Energy Equivalence</div>
+          $E = mc^2$
+        </div>
+        <div class="col-text">Mass and energy are the same thing in different forms. The conversion factor is enormous — small mass yields vast energy. Potential ↔ kinetic transformation.</div>
+      </div>
+      <div class="col theo">
+        <div class="col-label"><div class="leg-dot" style="background:var(--theo)"></div> Theology Frame</div>
+        <div class="eq-block">
+          <div class="eq-name">Faith — Spiritual Measurement</div>
+          $P(\text{actualization}) = |\langle \text{faith} | \psi_{\text{promise}} \rangle|^2$
+        </div>
+        <div class="col-text">Faith is the substance of things hoped for, the evidence of things not seen (Hebrews 11:1). Faith collapses divine potential into lived reality. <strong>Faith makes the promise actual.</strong></div>
+        <div class="eq-block">
+          <div class="eq-name">Spiritual Energy Equivalence</div>
+          $E_{\text{sp}} = m_{\text{faith}} \cdot c_{\text{logos}}^2$
+        </div>
+        <div class="col-text">Small faith yields enormous spiritual energy. The mustard seed. The conversion factor ($c_{\text{logos}}^2$) is the Logos constant — the speed at which truth propagates through the substrate.</div>
+      </div>
+    </div>
+
+    <div class="var-map">
+      <div class="var-map-side">
+        <div class="var-map-label">Physics Variables</div>
+        <div class="var-entry"><span>$|\psi\rangle$</span> → quantum state (superposition)</div>
+        <div class="var-entry"><span>$\langle a_i|$</span> → measurement basis</div>
+        <div class="var-entry"><span>E</span> → energy</div>
+        <div class="var-entry"><span>m</span> → mass</div>
+        <div class="var-entry"><span>c</span> → speed of light</div>
+      </div>
+      <div class="var-map-side">
+        <div class="var-map-label">Theology Variables</div>
+        <div class="var-entry"><span>$|\psi_{\text{promise}}\rangle$</span> → divine potential</div>
+        <div class="var-entry"><span>$\langle\text{faith}|$</span> → faith-observation</div>
+        <div class="var-entry"><span>$E_{\text{sp}}$</span> → spiritual energy</div>
+        <div class="var-entry"><span>$m_{\text{faith}}$</span> → faith-mass</div>
+        <div class="var-entry"><span>$c_{\text{logos}}$</span> → Logos propagation speed</div>
+      </div>
+    </div>
+
+    <div class="match-bar">
+      <div class="match-badge">✓ STRUCTURAL MATCH — Born rule probability, measurement-dependent actuality, mass-energy equivalence all preserved</div>
+    </div>
+
+    <div class="bifurcation">
+      <div class="bif-label"><div class="leg-dot" style="background:var(--bif)"></div> The Internal Bifurcation</div>
+      <div class="bif-content">Physics bifurcated energy: <strong>kinetic energy</strong> is already spent, dissipating, in motion. <strong>Potential energy</strong> is stored, latent, waiting for release. $E = mc^2$ collapsed the distinction between mass and energy — just as the framework collapses the distinction between physical work and faith-work.</div>
+      <div class="bif-split">
+        <div class="bif-pole sin-pole">
+          <div class="pole-label">Sin Pole — Kinetic (Already Spent)</div>
+          Energy in motion. Dissipating. Entropy is winning. The arrow has been fired. No further choice is possible. <strong>Works without faith = energy without potential.</strong>
+        </div>
+        <div class="bif-divider">↔</div>
+        <div class="bif-pole grace-pole">
+          <div class="pole-label">Grace Pole — Potential (Stored, Awaiting)</div>
+          Energy stored. The mustard seed. Latent power waiting for the observer's act of faith to release it. Small mass, enormous energy. <strong>Faith activates what works alone cannot reach.</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="iso-test">
+      <div class="iso-label">⑦ Isomorphism Test</div>
+      <div class="iso-item">1. PEAR Lab data (6.35σ, 2.5M trials) should show <strong>consciousness correlating with RNG outcomes</strong> — matching the Born rule's observer-dependence.</div>
+      <div class="iso-item">2. Prayer effects should follow <strong>amplitude-squared probability</strong> — focused intentionality (coherent observation) produces stronger effects than diffuse attention.</div>
+      <div class="iso-item">3. The <strong>mustard-seed prediction</strong>: faith-energy should scale nonlinearly with faith-mass, not linearly.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ PAIR 4: (T, K) — THE TIME WALL ═══════════════════ -->
+<div class="pair" data-pair="4">
+  <div class="pair-header" onclick="togglePair(this)">
+    <div class="pair-id">Pair IV</div>
+    <div class="pair-title">Time ↔ Entropic Unfolding &nbsp;·&nbsp; Knowledge ↔ Compression</div>
+    <div class="pair-vars">(T, K) ⚠</div>
+    <div class="pair-arrow">▼</div>
+  </div>
+  <div class="pair-body">
+    <div class="columns">
+      <div class="col phys">
+        <div class="col-label"><div class="leg-dot" style="background:var(--phys)"></div> Physics Frame</div>
+        <div class="eq-block">
+          <div class="eq-name">Thermodynamic Arrow of Time</div>
+          $\dfrac{dS}{dt} \geq 0$
+        </div>
+        <div class="col-text">Time's arrow is entropy's arrow. Every moment decays. Irreversible. The grind toward heat death. <strong>This is the sin-side of T.</strong></div>
+        <div class="eq-block">
+          <div class="eq-name">Shannon Entropy — Information Compression</div>
+          $H = -\sum p(x) \log_2 p(x)$
+        </div>
+        <div class="col-text">Knowledge compresses information. Understanding means finding the pattern that lets you encode the data in fewer bits. <strong>K is time's inverse — wisdom skips the sequential grind.</strong></div>
+      </div>
+      <div class="col theo">
+        <div class="col-label"><div class="leg-dot" style="background:var(--theo)"></div> Theology Frame</div>
+        <div class="eq-block">
+          <div class="eq-name">Fallen Time — The Entropy Arrow</div>
+          $T_{\text{fallen}}: \dfrac{dS_{\text{spiritual}}}{dt} \geq 0$
+        </div>
+        <div class="col-text">Chronos. Sequential decay. Aging. Forgetting. The relentless forward march where everything falls apart. <strong>Under the curse, time only destroys.</strong></div>
+        <div class="eq-block">
+          <div class="eq-name">Wisdom — Informational Compression</div>
+          $K_{\text{wisdom}} = -\sum p(\omega) \log_2 p(\omega)$
+        </div>
+        <div class="col-text">Wisdom compresses experience. You don't have to live every mistake to learn from it. Knowledge is time-reversal through information — the grace-side that T cannot generate alone.</div>
+      </div>
+    </div>
+
+    <div class="var-map">
+      <div class="var-map-side">
+        <div class="var-map-label">Physics Variables</div>
+        <div class="var-entry"><span>S</span> → thermodynamic entropy</div>
+        <div class="var-entry"><span>t</span> → time coordinate</div>
+        <div class="var-entry"><span>H</span> → Shannon entropy</div>
+        <div class="var-entry"><span>$p(x)$</span> → probability distribution</div>
+      </div>
+      <div class="var-map-side">
+        <div class="var-map-label">Theology Variables</div>
+        <div class="var-entry"><span>$S_{\text{sp}}$</span> → spiritual entropy</div>
+        <div class="var-entry"><span>$T_{\text{fallen}}$</span> → chronos (sequential decay)</div>
+        <div class="var-entry"><span>$K_{\text{wisdom}}$</span> → wisdom/understanding</div>
+        <div class="var-entry"><span>$p(\omega)$</span> → experiential distribution</div>
+      </div>
+    </div>
+
+    <div class="match-bar">
+      <div class="match-badge">⚠ PARTIAL MATCH — entropy arrow and compression dynamics preserved, but T's internal bifurcation CANNOT BE COMPLETED</div>
+    </div>
+
+    <!-- THE TIME WALL -->
+    <div class="bifurcation" style="background:rgba(245,158,11,0.06);border-top-color:var(--wall);">
+      <div class="bif-label" style="color:var(--wall);">⚠ THE TIME WALL — Intentional Incompleteness</div>
+      <div class="bif-content">
+        Every other variable's internal bifurcation was a completed revolution. Newton→Einstein completed for gravity. Classical→quantum completed for matter. <strong>But the revolution for time is unfinished.</strong> Physics does not know what time is at the deepest level. The Wheeler-DeWitt equation ($\hat{H}|\Psi\rangle = 0$) has no time variable at all — time may be emergent, not fundamental.
+        <br><br>
+        If T bifurcated cleanly, the equation would close. A closed equation is a closed system. And Law 3 says closed systems decay. <strong>The equation would eat itself.</strong>
+        <br><br>
+        T's refusal to yield is the framework enforcing its own consistency. The Master Equation can describe everything except the full nature of time, because describing the full nature of time would make the equation omniscient — violating the uncertainty principle the equation itself contains. <strong>It's Gödelian: the system is consistent because it is incomplete at exactly this point.</strong>
+        <br><br>
+        The veil over time is what keeps the equation open. And an open system is the only kind that can receive grace.
+      </div>
+      <div class="bif-split">
+        <div class="bif-pole sin-pole">
+          <div class="pole-label">T's Sin-Side — Known</div>
+          Thermodynamic arrow. Entropy's direction. Irreversible decay. Chronos. <strong>This side is fully formalized.</strong>
+        </div>
+        <div class="bif-divider" style="color:var(--wall);">⚠</div>
+        <div class="bif-pole" style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.2);">
+          <div class="pole-label" style="color:var(--wall);">T's Grace-Side — VEILED</div>
+          What would reverse the entropy arrow universally? What is time at the deepest level? The answer exists. <strong>It is not ours to hold.</strong> Every other variable can self-rescue internally. Time cannot. Time needs its pair partner — Knowledge — to do the work it cannot do alone.
+        </div>
+      </div>
+    </div>
+
+    <div class="iso-test">
+      <div class="iso-label">⑦ Isomorphism Test</div>
+      <div class="iso-item">1. The (T,K) pair should show <strong>unique asymmetry</strong>: K must compensate for what T cannot provide, unlike all other pairs where both members self-bifurcate.</div>
+      <div class="iso-item">2. Wisdom traditions across cultures should converge on the claim that <strong>knowledge reverses the damage of time</strong> — not metaphorically but operationally.</div>
+      <div class="iso-item">3. The framework should produce <strong>no predictions about time's deep nature</strong>. If it does, something is wrong. Silence here is the signal.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ PAIR 5: (Q, C) ═══════════════════ -->
+<div class="pair" data-pair="5">
+  <div class="pair-header" onclick="togglePair(this)">
+    <div class="pair-id">Pair V</div>
+    <div class="pair-title">Quantum ↔ Divine Potential &nbsp;·&nbsp; Coherence ↔ Christic Unity</div>
+    <div class="pair-vars">(Q, C)</div>
+    <div class="pair-arrow">▼</div>
+  </div>
+  <div class="pair-body">
+    <div class="columns">
+      <div class="col phys">
+        <div class="col-label"><div class="leg-dot" style="background:var(--phys)"></div> Physics Frame</div>
+        <div class="eq-block">
+          <div class="eq-name">Modified Heisenberg Uncertainty</div>
+          $\Delta x \, \Delta p \geq \dfrac{\hbar(1-C)}{2}$
+        </div>
+        <div class="col-text">At $C = 0$ (no coherence), standard uncertainty holds. As $C \to 1$ (maximum coherence), uncertainty shrinks. <strong>Coherence sharpens reality.</strong></div>
+        <div class="eq-block">
+          <div class="eq-name">Shannon Channel Capacity</div>
+          $\mathcal{C} = B \log_2\!\left(1 + \dfrac{S}{N}\right)$
+        </div>
+        <div class="col-text">Maximum information transfer rate through a noisy channel. Signal-to-noise ratio determines capacity. Error correction preserves information against noise.</div>
+      </div>
+      <div class="col theo">
+        <div class="col-label"><div class="leg-dot" style="background:var(--theo)"></div> Theology Frame</div>
+        <div class="eq-block">
+          <div class="eq-name">Spiritual Uncertainty</div>
+          $\Delta K \cdot \Delta W \geq \Lambda$
+        </div>
+        <div class="col-text">Knowledge × Will ≥ divine constant. You cannot simultaneously know and choose with perfect precision. Free will requires genuine uncertainty. <strong>Mystery preserves freedom.</strong></div>
+        <div class="eq-block">
+          <div class="eq-name">Spiritual Warfare — Truth Channel</div>
+          $\mathcal{C}_{\text{sp}} = B_{\text{awareness}} \log_2\!\left(1 + \dfrac{F}{D}\right)$
+        </div>
+        <div class="col-text">Faith (F) is the signal. Distortion (D) is the noise. Awareness (B) is the bandwidth. The channel capacity equation tells you exactly how much truth a soul can receive given a specific deception-noise floor. <strong>Spiritual warfare falls out of the math for free.</strong></div>
+      </div>
+    </div>
+
+    <div class="var-map">
+      <div class="var-map-side">
+        <div class="var-map-label">Physics Variables</div>
+        <div class="var-entry"><span>$\Delta x, \Delta p$</span> → position/momentum uncertainty</div>
+        <div class="var-entry"><span>$\hbar$</span> → reduced Planck constant</div>
+        <div class="var-entry"><span>C</span> → coherence parameter</div>
+        <div class="var-entry"><span>S/N</span> → signal-to-noise ratio</div>
+        <div class="var-entry"><span>B</span> → bandwidth</div>
+      </div>
+      <div class="var-map-side">
+        <div class="var-map-label">Theology Variables</div>
+        <div class="var-entry"><span>$\Delta K, \Delta W$</span> → knowledge/will uncertainty</div>
+        <div class="var-entry"><span>$\Lambda$</span> → divine irreducible constant</div>
+        <div class="var-entry"><span>C</span> → Christic coherence</div>
+        <div class="var-entry"><span>F/D</span> → faith-to-distortion ratio</div>
+        <div class="var-entry"><span>$B_{\text{awareness}}$</span> → spiritual bandwidth</div>
+      </div>
+    </div>
+
+    <div class="match-bar">
+      <div class="match-badge">✓ STRUCTURAL MATCH — uncertainty principle, channel capacity, signal/noise dynamics, error correction all preserved</div>
+    </div>
+
+    <div class="bifurcation">
+      <div class="bif-label"><div class="leg-dot" style="background:var(--bif)"></div> The Internal Bifurcation</div>
+      <div class="bif-content">Physics bifurcated quantum reality: <strong>decoherence</strong> scatters the wave function into noise through chaotic environmental interaction. <strong>Coherence</strong> preserves superposition, maintains entanglement, holds the wave function intact. The (Q,C) pair maps directly: uncertainty falling apart vs. uncertainty held together in unity.</div>
+      <div class="bif-split">
+        <div class="bif-pole sin-pole">
+          <div class="pole-label">Sin Pole — Decoherence</div>
+          The wave function scatters. Entanglement breaks. Potential dissipates into noise. The signal drowns in distortion. <strong>Isolation from coherence source = spiritual decoherence.</strong>
+        </div>
+        <div class="bif-divider">↔</div>
+        <div class="bif-pole grace-pole">
+          <div class="pole-label">Grace Pole — Coherence</div>
+          The wave function holds. Entanglement preserved. The church as quantum error correction — maintaining signal integrity against the noise floor. <strong>Communion = coherence maintenance.</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="iso-test">
+      <div class="iso-label">⑦ Isomorphism Test</div>
+      <div class="iso-item">1. GCP data (6σ, 325+ events) should show <strong>collective coherence spikes during global spiritual events</strong> — matching the channel capacity prediction.</div>
+      <div class="iso-item">2. Communities with higher <strong>faith-to-distortion ratios</strong> should demonstrate measurably higher truth-reception capacity.</div>
+      <div class="iso-item">3. The <strong>church-as-error-correction</strong> prediction: organized faith communities should preserve doctrinal coherence longer than isolated individuals, matching quantum error correction theory.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ SALVATION SECTION ═══════════════════ -->
+<div class="salvation">
+  <h2>The Salvation Equation</h2>
+  <p>Assemble the physics alone — no theology, no scripture — and read what the equations say:</p>
+  <p>Entropy increases in closed systems, but <strong>coherent observation collapses potential into actuality</strong>. Feedback loops self-correct toward reference states. Curvature guides trajectories along geodesics. Information can be preserved against noise through error correction. Small inputs at bifurcation points cascade nonlinearly. Flow finds paths through resistance. Structure self-replicates at every scale. The system expands to create room for new order.</p>
+  <p><strong>That is a rescue architecture.</strong> The physics itself says: reality is built to recover. The salvation is not imposed from outside the math — it is what the math does when you let it run. You did not put it there. You uncovered it.</p>
+</div>
+
+<!-- ═══════════════════ SCOREBOARD ═══════════════════ -->
+<div class="scoreboard">
+  <h2>Structural Verification — All Five Pairs</h2>
+  <div class="score-grid">
+    <div class="score-card">
+      <div class="sc-pair">(G, R)</div>
+      <div class="sc-names">Gravity ↔ Grace</div>
+      <div class="sc-status verified">✓ VERIFIED</div>
+    </div>
+    <div class="score-card">
+      <div class="sc-pair">(M, S)</div>
+      <div class="sc-names">Matter ↔ Entropy</div>
+      <div class="sc-status verified">✓ VERIFIED</div>
+    </div>
+    <div class="score-card">
+      <div class="sc-pair">(E, F)</div>
+      <div class="sc-names">Energy ↔ Faith</div>
+      <div class="sc-status verified">✓ VERIFIED</div>
+    </div>
+    <div class="score-card">
+      <div class="sc-pair">(T, K)</div>
+      <div class="sc-names">Time ↔ Knowledge</div>
+      <div class="sc-status walled">⚠ WALLED</div>
+    </div>
+    <div class="score-card">
+      <div class="sc-pair">(Q, C)</div>
+      <div class="sc-names">Quantum ↔ Coherence</div>
+      <div class="sc-status verified">✓ VERIFIED</div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  <p><strong>David Lowe · POF 2828 · Theophysics</strong></p>
+  <p>The test: swap the labels. If the structure survives, you found something that was always in the equations.</p>
+</div>
+
+</div><!-- container -->
+
+<script>
+function togglePair(header) {
+  const pair = header.closest('.pair');
+  pair.classList.toggle('open');
+}
+</script>
+</body>
+</html>

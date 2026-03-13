@@ -1,0 +1,2006 @@
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            showPage('home');
+            
+            // Add smooth scrolling to any remaining anchor links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+
+            // Add keyboard navigation
+            document.addEventListener('keydown', function(e) {
+                const currentIndex = pages.indexOf(currentPage);
+                
+                if (e.key === 'ArrowRight' && currentIndex < pages.length - 1) {
+                    showPage(pages[currentIndex + 1]);
+                } else if (e.key === 'ArrowLeft' && currentIndex > 0) {
+                    showPage(pages[currentIndex - 1]);
+                }
+            });
+
+            // Initialize visual effects for embedded pages
+            initializeVisualEffects();
+        });
+
+        // Initialize visual effects for the embedded pages
+        function initializeVisualEffects() {
+            // Empty Room transition functionality
+            window.currentRoom = 0;
+            
+            // Create stars for full room
+            function createStars() {
+                const container = document.getElementById('starField');
+                if (!container) return;
+                
+                for (let i = 0; i < 100; i++) {
+                    const star = document.createElement('div');
+                    star.style.cssText = `
+                        position: absolute;
+                        background: white;
+                        border-radius: 50%;
+                        width: ${Math.random() * 3 + 1}px;
+                        height: ${Math.random() * 3 + 1}px;
+                        left: ${Math.random() * 100}%;
+                        top: ${Math.random() * 100}%;
+                        animation: twinkle ${Math.random() * 4 + 2}s ease-in-out infinite alternate;
+                    `;
+                    container.appendChild(star);
+                }
+            }
+
+            // Create void particles for empty room
+            function createVoidParticles() {
+                const container = document.getElementById('voidParticles');
+                if (!container) return;
+                
+                for (let i = 0; i < 20; i++) {
+                    const particle = document.createElement('div');
+                    particle.style.cssText = `
+                        position: absolute;
+                        width: 2px;
+                        height: 2px;
+                        background: rgba(255, 255, 255, 0.1);
+                        border-radius: 50%;
+                        left: ${Math.random() * 100}%;
+                        top: ${Math.random() * 100}%;
+                        animation: drift ${Math.random() * 8 + 5}s linear infinite;
+                    `;
+                    container.appendChild(particle);
+                }
+            }
+
+            // Toggle rooms function for empty room page
+            window.toggleRooms = function() {
+                const container = document.getElementById('roomsContainer');
+                const button = document.querySelector('button[onclick="toggleRooms()"]');
+                const overlay = document.getElementById('questionOverlay');
+                
+                if (!container) return;
+                
+                if (window.currentRoom === 0) {
+                    container.style.transform = 'translateX(-100vw)';
+                    if (button) button.textContent = 'Return to the Void ←';
+                    setTimeout(() => {
+                        if (overlay) overlay.style.opacity = '1';
+                    }, 2000);
+                } else {
+                    container.style.transform = 'translateX(0)';
+                    if (button) button.textContent = 'Experience the Transition →';
+                    if (overlay) overlay.style.opacity = '0';
+                }
+                window.currentRoom = 1 - window.currentRoom;
+            };
+
+            // Initialize after a short delay to ensure DOM is ready
+            setTimeout(() => {
+                createStars();
+                createVoidParticles();
+                
+                // Auto-transition for empty room after 5 seconds
+                if (currentPage === 'empty-room') {
+                    setTimeout(() => {
+                        if (window.currentRoom === 0) {
+                            window.toggleRooms();
+                        }
+                    }, 5000);
+                }
+            }, 500);
+
+            // Add CSS animations
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes twinkle {
+                    0% { opacity: 0.3; transform: scale(1); }
+                    100% { opacity: 1; transform: scale(1.2); }
+                }
+                
+                @keyframes drift {
+                    0% { opacity: 0; transform: translate3d(0, 0, 0); }
+                    50% { opacity: 0.3; }
+                    100% { opacity: 0; transform: translate3d(50px, -50px, 20px); }
+                }
+
+                @keyframes rotate {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+
+                @keyframes float {
+                    0%, 100% { transform: translateY(0px); }
+                    50% { transform: translateY(-20px); }
+                }
+
+                @keyframes flicker {
+                    0%, 100% { 
+                        text-shadow: 0 0 30px rgba(255, 71, 87, 0.8);
+                        filter: brightness(1);
+                    }
+                    50% { 
+                        text-shadow: 0 0 50px rgba(255, 71, 87, 1), 0 0 80px rgba(255, 0, 0, 0.6);
+                        filter: brightness(1.2);
+                    }
+                }
+
+                @keyframes pulse {
+                    0%, 100% { transform: scale(1); opacity: 0.9; }
+                    50% { transform: scale(1.05); opacity: 1; }
+                }
+
+                @keyframes cardFloat {
+                    0%, 100% { transform: rotateX(2deg) rotateY(-1deg) translateY(0); }
+                    50% { transform: rotateX(-2deg) rotateY(1deg) translateY(-20px); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        // Particle system for background effect
+        function createParticles() {
+            const heroHeader = document.querySelector('.hero-header');
+            if (!heroHeader) return;
+            
+            const particleCount = 30;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.cssText = `
+                    position: absolute;
+                    width: 2px;
+                    height: 2px;
+                    background: rgba(255,255,255,0.4);
+                    border-radius: 50%;
+                    pointer-events: none;
+                    left: ${Math.random() * 100}%;
+                    top: ${Math.random() * 100}%;
+                    animation: float ${3 + Math.random() * 4}s ease-in-out infinite ${Math.random() * 2}s;
+                    z-index: 0;
+                `;
+                heroHeader.appendChild(particle);
+            }
+        }
+
+        // CSS for particle animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes float {
+                0%, 100% { 
+                    transform: translateY(0) rotate(0deg); 
+                    opacity: 0.3; 
+                }
+                50% { 
+                    transform: translateY(-20px) rotate(180deg); 
+                    opacity: 1; 
+                }
+            }
+            
+            .hero-header .particle {
+                z-index: 0;
+            }
+            
+            .hero-title, .hero-subtitle, .hero-cta {
+                position: relative;
+                z-index: 1;
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Add intersection observer for animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        // Enhanced navigation with URL state (optional - for bookmarking)
+        function updateURL(pageId) {
+            if (history.pushState) {
+                history.pushState({page: pageId}, '', `#${pageId}`);
+            }
+        }
+
+        // Handle browser back/forward buttons
+        window.addEventListener('popstate', function(e) {
+            if (e.state && e.state.page) {
+                showPage(e.state.page);
+            } else {
+                const hash = window.location.hash.substr(1);
+                if (pages.includes(hash)) {
+                    showPage(hash);
+                } else {
+                    showPage('home');
+                }
+            }
+        });
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(e) {
+            const navLinks = document.getElementById('navLinks');
+            const mobileToggle = document.querySelector('.mobile-menu-toggle');
+            
+            if (!navLinks.contains(e.target) && !mobileToggle.contains(e.target)) {
+                navLinks.classList.remove('open');
+            }
+        });
+
+        // Add reading progress for each page
+        window.addEventListener('scroll', function() {
+            const activeSection = document.querySelector('.page-section.active');
+            if (!activeSection) return;
+            
+            const scrollTop = window.pageYOffset;
+            const docHeight = activeSection.offsetHeight;
+            const winHeight = window.innerHeight;
+            const scrollPercent = scrollTop / (docHeight - winHeight);
+            const scrollPercentRounded = Math.round(scrollPercent * 100);
+            
+            // Update progress for current page only
+            if (scrollPercentRounded >= 0 && scrollPercentRounded <= 100) {
+                const baseProgress = (pages.indexOf(currentPage) / pages.length) * 100;
+                const pageProgress = (scrollPercentRounded / 100) * (100 / pages.length);
+                document.getElementById('progressBar').style.width = (baseProgress + pageProgress) + '%';
+            }
+        });
+
+        // Enhanced accessibility
+        document.addEventListener('keydown', function(e) {
+            // Tab navigation enhancement
+            if (e.key === 'Tab') {
+                document.body.classList.add('keyboard-navigation');
+            }
+            
+            // Escape to close mobile menu
+            if (e.key === 'Escape') {
+                document.getElementById('navLinks').classList.remove('open');
+            }
+        });
+
+        document.addEventListener('mousedown', function() {
+            document.body.classList.remove('keyboard-navigation');
+        });
+
+        // Page-specific initialization
+        function initializePageSpecificFeatures(pageId) {
+            switch(pageId) {
+                case 'empty-room':
+                    // Reset room state when entering page
+                    window.currentRoom = 0;
+                    const container = document.getElementById('roomsContainer');
+                    const overlay = document.getElementById('questionOverlay');
+                    if (container) container.style.transform = 'translateX(0)';
+                    if (overlay) overlay.style.opacity = '0';
+                    
+                    // Auto-transition after 5 seconds
+                    setTimeout(() => {
+                        if (currentPage === 'empty-room' && window.currentRoom === 0) {
+                            window.toggleRooms();
+                        }
+                    }, 5000);
+                    break;
+                    
+                case 'personal-gauntlet':
+                    // Add hover effects to mirror items
+                    document.querySelectorAll('[style*="rgba(255, 71, 87, 0.1)"], [style*="rgba(255, 215, 0, 0.1)"]').forEach(item => {
+                        item.addEventListener('mouseenter', function() {
+                            this.style.transform = this.innerHTML.includes('Shadow') ? 
+                                'translateX(-10px) scale(1.02)' : 'translateX(10px) scale(1.02)';
+                        });
+                        
+                        item.addEventListener('mouseleave', function() {
+                            this.style.transform = 'translateX(0) scale(1)';
+                        });
+                    });
+                    break;
+            }
+        }
+
+        // Update showPage function to include page-specific initialization
+        const originalShowPage = showPage;
+        showPage = function(pageId) {
+            originalShowPage(pageId);
+            
+            // Initialize page-specific features after a short delay
+            setTimeout(() => {
+                initializePageSpecificFeatures(pageId);
+            }, 100);
+        };
+    </script>
+
+    <!-- Academic References Footer -->
+    <footer style="background: var(--bg-tertiary); padding: 3rem 2rem; margin-top: 4rem; border-top: 1px solid var(--gray-dark); text-align: center;">
+        <div style="max-width: 1000px; margin: 0 auto;">
+            <h4 style="color: var(--gold-primary); margin-bottom: 2rem;">Academic Foundation</h4>
+            <div style="columns: 2; column-gap: 3rem; text-align: left; font-size: 0.9rem; color: var(--gray-medium);">
+                <div style="margin-bottom: 1rem;"><strong>Mathematical Foundations:</strong> Collins (2009), Barnes (2019), Penrose (2004), Weinberg (1987)</div>
+                <div style="margin-bottom: 1rem;"><strong>Information Theory:</strong> Shannon (1948), Bennett (1990), Lloyd (2006)</div>
+                <div style="margin-bottom: 1rem;"><strong>Consciousness Studies:</strong> Chalmers (1995), Nagel (2012), Plantinga (2011)</div>
+                <div style="margin-bottom: 1rem;"><strong>Logical Structure:</strong> Aristotle (Metaphysics), Aquinas (Summa), Plantinga (1974)</div>
+                <div style="margin-bottom: 1rem;"><strong>Psychological Resistance:</strong> Festinger (1957), Haidt (2012), Klayman & Ha (1987)</div>
+                <div style="margin-bottom: 1rem;"><strong>Fine-Tuning Evidence:</strong> Carter (1974), Rees (1999), Davies (2007), Lewis & Barnes (2016)</div>
+                <div style="margin-bottom: 1rem;"><strong>Biological Complexity:</strong> Behe (1996), Dembski (1998), Meyer (2009), Axe (2016)</div>
+                <div style="margin-bottom: 1rem;"><strong>Decoherence Theory:</strong> Zurek (1991), Tegmark (2000), Schlosshauer (2007)</div>
+            </div>
+            <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--gray-dark);">
+                <p style="color: var(--gray-medium); font-size: 0.9rem;">
+                    © 2025 THEOPHYSICS Research Initiative | David Lowe<br>
+                    <em style="color: var(--gold-primary);">"Where Logic Meets the Sacred"</em>
+                </p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>        </section>
+
+        <!-- THREE GATES VISUAL PAGE -->
+        <section class="page-section" id="gates-visual">
+            <div style="position: relative; width: 100%; min-height: 100vh; background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 50%, #16213e 100%); color: #e0e6ed; font-family: 'Arial', sans-serif; padding: 40px 20px;">
+                <div style="max-width: 1200px; margin: 0 auto;">
+                    <h1 style="text-align: center; font-size: 3em; font-weight: bold; background: linear-gradient(45deg, #64b5f6, #9c27b0, #ff6b35); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 20px;">The Three Gates</h1>
+                    <p style="text-align: center; font-size: 1.3em; color: #a0a8b0; margin-bottom: 50px;">A Proof Through Simple Questions</p>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 30px; margin: 50px 0; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 320px; background: rgba(255, 255, 255, 0.05); border-radius: 20px; padding: 30px; backdrop-filter: blur(10px); border: 3px solid #64b5f6; box-shadow: 0 0 30px rgba(100, 181, 246, 0.3); position: relative; transition: transform 0.3s ease;">
+                            <div style="position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8em; font-weight: bold; color: white; background: linear-gradient(45deg, #64b5f6, #42a5f5);">1</div>
+                            <div style="font-size: 1.8em; font-weight: bold; text-align: center; margin: 20px 0 25px 0; color: #64b5f6;">The Duality Gate</div>
+                            <div style="background: rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 20px; margin: 20px 0; border-left: 4px solid #64b5f6; font-size: 1.1em; line-height: 1.6; font-weight: bold;">
+                                Do you agree that there is a meaningful, objective difference between an act of creation and an act of destruction?
+                            </div>
+                            <div style="text-align: center; margin: 25px 0; font-size: 1.3em; font-weight: bold; color: #64b5f6;">YES</div>
+                            <div style="background: rgba(255, 215, 0, 0.1); border: 1px solid #ffd700; border-radius: 8px; padding: 15px; margin-top: 20px; font-size: 0.95em; line-height: 1.5;">
+                                <strong style="color: #ffd700;">You have agreed to a foundational truth:</strong> Reality has a built-in duality. Coherence and decoherence are not the same thing.
+                            </div>
+                        </div>
+                        
+                        <div style="flex: 1; min-width: 320px; background: rgba(255, 255, 255, 0.05); border-radius: 20px; padding: 30px; backdrop-filter: blur(10px); border: 3px solid #9c27b0; box-shadow: 0 0 30px rgba(156, 39, 176, 0.3); position: relative; transition: transform 0.3s ease;">
+                            <div style="position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8em; font-weight: bold; color: white; background: linear-gradient(45deg, #9c27b0, #ab47bc);">2</div>
+                            <div style="font-size: 1.8em; font-weight: bold; text-align: center; margin: 20px 0 25px 0; color: #9c27b0;">The Nature Gate</div>
+                            <div style="background: rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 20px; margin: 20px 0; border-left: 4px solid #9c27b0; font-size: 1.1em; line-height: 1.6; font-weight: bold;">
+                                Can the fundamental principle of Coherence (+1), by its very nature, perform an act of pure Decoherence (-1)?
+                            </div>
+                            <div style="text-align: center; margin: 25px 0; font-size: 1.3em; font-weight: bold; color: #9c27b0;">NO</div>
+                            <div style="background: rgba(255, 215, 0, 0.1); border: 1px solid #ffd700; border-radius: 8px; padding: 15px; margin-top: 20px; font-size: 0.95em; line-height: 1.5;">
+                                <strong style="color: #ffd700;">You have affirmed a fundamental law:</strong> The creative principle cannot be, and cannot commit, the destructive principle.
+                            </div>
+                        </div>
+                        
+                        <div style="flex: 1; min-width: 320px; background: rgba(255, 255, 255, 0.05); border-radius: 20px; padding: 30px; backdrop-filter: blur(10px); border: 3px solid #ff6b35; box-shadow: 0 0 30px rgba(255, 107, 53, 0.3); position: relative; transition: transform 0.3s ease;">
+                            <div style="position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8em; font-weight: bold; color: white; background: linear-gradient(45deg, #ff6b35, #ff8a65);">3</div>
+                            <div style="font-size: 1.8em; font-weight: bold; text-align: center; margin: 20px 0 25px 0; color: #ff6b35;">The Shadow Gate</div>
+                            <div style="background: rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 20px; margin: 20px 0; border-left: 4px solid #ff6b35; font-size: 1.1em; line-height: 1.6; font-weight: bold;">
+                                If the ultimate source is pure Coherence and cannot create Decoherence, what does the existence of shadows prove?
+                            </div>
+                            <div style="text-align: center; margin: 25px 0; font-size: 1.3em; font-weight: bold; color: #ff6b35;">OBSTRUCTION</div>
+                            <div style="background: rgba(255, 215, 0, 0.1); border: 1px solid #ffd700; border-radius: 8px; padding: 15px; margin-top: 20px; font-size: 0.95em; line-height: 1.5;">
+                                <strong style="color: #ffd700;">You have proven the shadow exists:</strong> Something is blocking the light, and it is not cast by the Light itself.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: center; align-items: center; margin: 40px 0; flex-wrap: wrap; gap: 20px;">
+                        <span style="font-size: 3em; color: #ffd700; text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);">↓</span>
+                    </div>
+                    
+                    <div style="background: rgba(255, 215, 0, 0.15); border: 3px solid #ffd700; border-radius: 20px; padding: 40px; text-align: center; margin-top: 50px; box-shadow: 0 0 40px rgba(255, 215, 0, 0.2);">
+                        <div style="font-size: 2.2em; color: #ffd700; font-weight: bold; margin-bottom: 20px;">The Unavoidable Conclusion</div>
+                        <div style="font-size: 1.3em; line-height: 1.7; color: #e0e6ed;">
+                            Through your own logic, you have proven that evil is not a co-equal force opposing good, 
+                            but a shadow cast by something turning away from an ultimate Source of pure Coherence. 
+                            <br><br>
+                            <strong>The next question is obvious: What is casting the shadow?</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="page-navigation">
+                <a href="#" class="nav-button" onclick="showPage('home')">← Home</a>
+                <span style="color: var(--gold-primary); font-weight: 600;">Visual Gates Complete</span>
+                <a href="#" class="nav-button" onclick="showPage('gate1')">Detailed Gate 1 →</a>
+            </div>
+        </section>
+
+        <!-- EMPTY ROOM PAGE -->
+        <section class="page-section" id="empty-room">
+            <div style="margin: 0; padding: 0; background: #000000; color: #ffffff; font-family: 'Arial', sans-serif; overflow-x: hidden; min-height: 100vh;">
+                
+                <div style="position: relative; width: 100vw; height: 100vh; perspective: 1000px;">
+                    <div style="position: absolute; top: 40px; left: 50%; transform: translateX(-50%); z-index: 100; text-align: center;">
+                        <h1 style="font-size: 3.5em; font-weight: bold; background: linear-gradient(45deg, #64b5f6, #9c27b0, #ff6b35); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); margin-bottom: 15px;">THE ULTIMATE QUESTION</h1>
+                        <p style="font-size: 1.3em; color: #a0a8b0; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);">A Tale of Two Rooms</p>
+                    </div>
+                    
+                    <div id="roomsContainer" style="display: flex; height: 100vh; width: 200vw; transition: transform 3s ease-in-out;">
+                        <!-- EMPTY ROOM -->
+                        <div style="width: 100vw; height: 100vh; position: relative; overflow: hidden; background: radial-gradient(circle at center, #000000 0%, #0a0a0a 50%, #000000 100%); display: flex; align-items: center; justify-content: center;">
+                            <div style="width: 600px; height: 400px; border: 2px dashed rgba(255, 255, 255, 0.1); border-radius: 20px; position: relative; transform-style: preserve-3d; animation: float 6s ease-in-out infinite;">
+                                <div id="voidParticles" style="position: absolute; width: 100%; height: 100%;"></div>
+                            </div>
+                            <div style="position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%); text-align: center; z-index: 10;">
+                                <h2 style="font-size: 2.5em; color: rgba(255, 255, 255, 0.3); margin-bottom: 20px; text-shadow: 0 0 20px rgba(255, 255, 255, 0.1);">THE EMPTY ROOM</h2>
+                                <p style="font-size: 1.2em; color: rgba(255, 255, 255, 0.4); line-height: 1.6; max-width: 600px;">
+                                    Perfect, absolute, total <strong>Nothing</strong>.<br>
+                                    No air, no light, no atoms. No laws of physics.<br>
+                                    No space and time themselves.<br>
+                                    The ultimate expression of pure void.
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- FULL ROOM -->
+                        <div style="width: 100vw; height: 100vh; position: relative; overflow: hidden; background: radial-gradient(circle at center, #0a1a2e 0%, #1a1a2e 30%, #0f0f1e 70%, #000000 100%);">
+                            <div style="position: absolute; width: 100%; height: 100%; transform-style: preserve-3d;">
+                                <div style="position: absolute; width: 300px; height: 300px; border-radius: 50%; background: radial-gradient(circle, rgba(100, 181, 246, 0.8) 0%, rgba(156, 39, 176, 0.6) 30%, rgba(255, 107, 53, 0.4) 60%, transparent 100%); animation: rotate 20s linear infinite; box-shadow: 0 0 100px rgba(100, 181, 246, 0.5), inset 0 0 100px rgba(156, 39, 176, 0.3); top: 10%; left: 15%; transform: scale(1.2);"></div>
+                                <div style="position: absolute; width: 300px; height: 300px; border-radius: 50%; background: radial-gradient(circle, rgba(100, 181, 246, 0.8) 0%, rgba(156, 39, 176, 0.6) 30%, rgba(255, 107, 53, 0.4) 60%, transparent 100%); animation: rotate 20s linear infinite reverse; box-shadow: 0 0 100px rgba(100, 181, 246, 0.5), inset 0 0 100px rgba(156, 39, 176, 0.3); top: 60%; right: 20%; transform: scale(0.8);"></div>
+                                <div id="starField" style="position: absolute; width: 100%; height: 100%;"></div>
+                            </div>
+                            <div style="position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); text-align: center; z-index: 10;">
+                                <h2 style="font-size: 2.5em; background: linear-gradient(45deg, #64b5f6, #ffd700, #ff6b35); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 20px; text-shadow: 0 0 30px rgba(255, 215, 0, 0.3);">THE FULL ROOM</h2>
+                                <p style="font-size: 1.2em; color: #e0e6ed; line-height: 1.6; max-width: 700px;">
+                                    Galaxies and quarks, gravity and light, rules and life.<br>
+                                    A universe breathtakingly <strong>full</strong> of something.<br>
+                                    Complex, ordered, magnificent reality.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button onclick="toggleRooms()" style="position: fixed; bottom: 50px; left: 50%; transform: translateX(-50%); z-index: 1000; background: linear-gradient(45deg, #64b5f6, #9c27b0); border: none; padding: 15px 30px; border-radius: 50px; color: white; font-size: 1.1em; font-weight: bold; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 0 30px rgba(100, 181, 246, 0.4);">
+                        Experience the Transition →
+                    </button>
+                    
+                    <div id="questionOverlay" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0, 0, 0, 0.8); border: 2px solid #ffd700; border-radius: 20px; padding: 40px; text-align: center; z-index: 200; opacity: 0; transition: opacity 0.5s ease;">
+                        <div style="font-size: 1.8em; color: #ffd700; font-weight: bold; margin-bottom: 20px;">What can Nothing create?</div>
+                        <div style="font-size: 1.3em; color: #e0e6ed; line-height: 1.6;">
+                            Your own intuition knows the answer:<br>
+                            <strong>Nothing.</strong><br><br>
+                            If this Full Room didn't come from the Empty Room,<br>
+                            then it came from something that was <em>never empty</em>.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="page-navigation">
+                <a href="#" class="nav-button" onclick="showPage('gate3')">← Gate 3</a>
+                <span style="color: var(--gold-primary); font-weight: 600;">The Source Revealed</span>
+                <a href="#" class="nav-button" onclick="showPage('rebel-profile')">Identify the Shadow →</a>
+            </div>
+        </section>
+
+        <!-- REBEL PROFILE PAGE -->
+        <section class="page-section" id="rebel-profile">
+            <div style="position: relative; width: 100%; min-height: 100vh; padding: 40px 20px; background: radial-gradient(circle at center, #000000 0%, #0a0000 40%, #000000 100%); color: #ffffff; font-family: 'Arial', sans-serif; overflow-x: hidden;">
+                
+                <div style="text-align: center; margin-bottom: 60px; padding: 40px 0;">
+                    <h1 style="font-size: 4em; font-weight: bold; background: linear-gradient(45deg, #ff4757, #000000, #ff4757); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 20px; text-shadow: 0 0 30px rgba(255, 71, 87, 0.8); animation: flicker 4s ease-in-out infinite alternate;">THE PROFILE OF A REBEL</h1>
+                    <p style="font-size: 1.8em; color: #cc0000; margin-bottom: 30px; font-style: italic;">Identifying the Source of the Shadow</p>
+                    <div style="max-width: 900px; margin: 0 auto 60px auto; font-size: 1.3em; line-height: 1.8; color: #e0e0e0; text-align: center; background: rgba(255, 71, 87, 0.05); border: 1px solid rgba(255, 71, 87, 0.2); border-radius: 15px; padding: 30px;">
+                        We have moved beyond abstract principles and are now on the hunt for a specific cause. If this "obstruction" is real—if there is a principle of active, intelligent, willful rebellion against Coherence at work in the universe—<strong>does it have a name? Does it have a face?</strong>
+                    </div>
+                </div>
+                
+                <div style="position: relative; max-width: 1200px; margin: 80px auto; perspective: 1000px;">
+                    <div style="background: linear-gradient(135deg, rgba(0, 0, 0, 0.9) 0%, rgba(51, 0, 0, 0.7) 50%, rgba(0, 0, 0, 0.9) 100%); border: 3px solid #ff4757; border-radius: 25px; padding: 50px; position: relative; overflow: hidden; box-shadow: 0 0 100px rgba(255, 71, 87, 0.4), inset 0 0 100px rgba(0, 0, 0, 0.8); transform-style: preserve-3d; animation: cardFloat 8s ease-in-out infinite;">
+                        <div style="position: relative; z-index: 2;">
+                            <div style="text-align: center; margin-bottom: 50px;">
+                                <div style="font-size: 3.5em; font-weight: bold; color: #ff4757; text-shadow: 0 0 40px rgba(255, 71, 87, 0.8); margin-bottom: 15px; animation: pulse 3s ease-in-out infinite;">SATAN</div>
+                                <div style="font-size: 1.3em; color: #cc9999; font-style: italic; margin-bottom: 20px;">
+                                    The Adversary • The Tempter • The Father of Lies
+                                </div>
+                                <div style="font-size: 1.1em; color: #e0e0e0; line-height: 1.6; max-width: 800px; margin: 0 auto;">
+                                    History offers one primary candidate for this role, an archetype so ancient and pervasive it appears in cultures and religions across the world. Let's treat this not as religious dogma, but as a <strong>profile of a suspect</strong>. Let's run this suspect through a rigorous logical gauntlet to see if he fits the crime scene we've uncovered.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 40px; margin: 60px 0; max-width: 1200px; margin-left: auto; margin-right: auto;">
+                    <div style="background: rgba(0, 0, 0, 0.6); border: 2px solid #ffd700; border-radius: 20px; padding: 30px; position: relative; backdrop-filter: blur(10px); transition: all 0.3s ease; box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);">
+                        <div style="text-align: center; margin-bottom: 25px;">
+                            <div style="font-size: 2.5em; font-weight: bold; opacity: 0.3; margin-bottom: 10px;">01</div>
+                            <div style="font-size: 1.8em; font-weight: bold; margin-bottom: 15px; color: #ffd700;">THE SPONTANEITY TEST</div>
+                            <div style="font-size: 1.1em; line-height: 1.6; margin-bottom: 25px; color: #d0d0d0;">
+                                It cannot have been created evil. A true rebel must be a being that was originally <em>coherent</em>—good, created in the light—who <em>chose</em> to become decoherent.
+                            </div>
+                        </div>
+                        <div style="background: rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 20px; margin-bottom: 20px; border-left: 4px solid #ffd700;">
+                            <strong>Biblical Evidence:</strong> Described as a high angel, Lucifer, a "light-bearer," perfect in his ways from the day he was created... <em>until</em> iniquity was found in him. He was a coherent being who chose rebellion.
+                        </div>
+                        <div style="text-align: center; padding: 15px; border-radius: 10px; font-size: 1.3em; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; background: rgba(76, 175, 80, 0.2); color: #4caf50; border: 2px solid #4caf50;">✓ PASSES THE TEST</div>
+                    </div>
+                    
+                    <div style="background: rgba(0, 0, 0, 0.6); border: 2px solid #ff6b6b; border-radius: 20px; padding: 30px; position: relative; backdrop-filter: blur(10px); transition: all 0.3s ease; box-shadow: 0 0 30px rgba(255, 107, 107, 0.3);">
+                        <div style="text-align: center; margin-bottom: 25px;">
+                            <div style="font-size: 2.5em; font-weight: bold; opacity: 0.3; margin-bottom: 10px;">02</div>
+                            <div style="font-size: 1.8em; font-weight: bold; margin-bottom: 15px; color: #ff6b6b;">THE PRIMARY FUNCTION TEST</div>
+                            <div style="font-size: 1.1em; line-height: 1.6; margin-bottom: 25px; color: #d0d0d0;">
+                                Its core motivation must be Decoherence itself. Its primary goal must be to sever, to corrupt, to lie, and to destroy. Destruction cannot be a tool for another goal; destruction <em>is</em> the goal.
+                            </div>
+                        </div>
+                        <div style="background: rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 20px; margin-bottom: 20px; border-left: 4px solid #ff6b6b;">
+                            <strong>Biblical Evidence:</strong> His explicit purpose is described as being to "steal, kill, and destroy." He is called the "father of lies," the ultimate source of spiritual noise and corruption. His entire function is to promote Decoherence.
+                        </div>
+                        <div style="text-align: center; padding: 15px; border-radius: 10px; font-size: 1.3em; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; background: rgba(76, 175, 80, 0.2); color: #4caf50; border: 2px solid #4caf50;">✓ PASSES THE TEST</div>
+                    </div>
+                    
+                    <div style="background: rgba(0, 0, 0, 0.6); border: 2px solid #64b5f6; border-radius: 20px; padding: 30px; position: relative; backdrop-filter: blur(10px); transition: all 0.3s ease; box-shadow: 0 0 30px rgba(100, 181, 246, 0.3);">
+                        <div style="text-align: center; margin-bottom: 25px;">
+                            <div style="font-size: 2.5em; font-weight: bold; opacity: 0.3; margin-bottom: 10px;">03</div>
+                            <div style="font-size: 1.8em; font-weight: bold; margin-bottom: 15px; color: #64b5f6;">THE STABILITY TEST</div>
+                            <div style="font-size: 1.1em; line-height: 1.6; margin-bottom: 25px; color: #d0d0d0;">
+                                It must be powerful and persistent, but it cannot be eternal. Our logic has proven that Decoherence is parasitic and secondary. The ultimate rebel must be a <em>finite</em> being with a pre-written defeat.
+                            </div>
+                        </div>
+                        <div style="background: rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 20px; margin-bottom: 20px; border-left: 4px solid #64b5f6;">
+                            <strong>Biblical Evidence:</strong> The very same narrative that describes his power also explicitly describes his final, absolute judgment and defeat. He is a temporary antagonist in a story whose ending has already been written by the ultimate Author.
+                        </div>
+                        <div style="text-align: center; padding: 15px; border-radius: 10px; font-size: 1.3em; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; background: rgba(255, 107, 107, 0.2); color: #ff6b6b; border: 2px solid #ff6b6b;">✗ FAILS (BY DESIGN)</div>
+                    </div>
+                </div>
+                
+                <div style="background: linear-gradient(135deg, rgba(255, 71, 87, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%); border: 3px solid #ff4757; border-radius: 25px; padding: 50px; max-width: 1000px; margin: 80px auto; text-align: center; position: relative; overflow: hidden;">
+                    <div style="position: relative; z-index: 2;">
+                        <div style="font-size: 2.8em; font-weight: bold; color: #ff4757; margin-bottom: 30px; text-shadow: 0 0 30px rgba(255, 71, 87, 0.8);">THE PROFILE FITS</div>
+                        <div style="font-size: 1.4em; line-height: 1.8; color: #e0e0e0; margin-bottom: 30px;">
+                            We have now moved from an abstract proof of a shadow to a logically sound identification of its most likely source. We have given the shadow a face.
+                        </div>
+                        <div style="font-size: 1.4em; line-height: 1.8; color: #e0e0e0; margin-bottom: 30px;">
+                            <strong>It is the face of a Rebel.</strong>
+                        </div>
+                        <div style="background: rgba(0, 0, 0, 0.6); border: 2px solid #ffd700; border-radius: 15px; padding: 30px; margin-top: 40px;">
+                            <div style="font-size: 1.8em; color: #ffd700; font-weight: bold; margin-bottom: 20px;">The Logical Implication</div>
+                            <div style="font-size: 1.2em; line-height: 1.7; color: #f0f0f0;">
+                                And a rebel, by definition, must be rebelling <em>against</em> something. If we have proven the Rebel exists through pure logic, we have simultaneously proven the existence of the <strong>King</strong> he rebels against.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="page-navigation">
+                <a href="#" class="nav-button" onclick="showPage('empty-room')">← Empty Room</a>
+                <span style="color: var(--gold-primary); font-weight: 600;">The Shadow Identified</span>
+                <a href="#" class="nav-button" onclick="showPage('gauntlet')">Test the Alternative →</a>
+            </div>
+        </section>
+
+        <!-- PERSONAL GAUNTLET PAGE -->
+        <section class="page-section" id="personal-gauntlet">
+            <div style="background: linear-gradient(135deg, #000000 0%, #1a0a0a 25%, #0a0a1a 50%, #1a1a2e 100%); color: #ffffff; font-family: 'Arial', sans-serif; overflow-x: hidden; min-height: 100vh; position: relative; width: 100%; padding: 40px 20px;">
+                
+                <div style="text-align: center; margin-bottom: 60px; padding: 40px 0;">
+                    <h1 style="font-size: 4em; font-weight: bold; background: linear-gradient(45deg, #ff4757, #ffd700, #64b5f6, #9c27b0); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 20px; text-shadow: 0 0 50px rgba(255, 215, 0, 0.3);">THE PERSONAL GAUNTLET</h1>
+                    <p style="font-size: 1.5em; color: #a0a8b0; margin-bottom: 30px;">A Mirror for the Soul</p>
+                    <div style="max-width: 800px; margin: 0 auto; font-size: 1.2em; line-height: 1.8; color: #e0e6ed; text-align: center;">
+                        The final gauntlet is not cosmic—it is personal. As you read this, don't ask if it's true for "people in general." Ask if it's true for <strong>you</strong>. This is a diagnostic tool. A mirror.
+                    </div>
+                </div>
+                
+                <div style="text-align: center; font-size: 1.4em; font-weight: bold; color: #64b5f6; margin: 40px 0 30px 0; text-transform: uppercase; letter-spacing: 1px; position: relative;">On Identity and Worth</div>
+                
+                <div style="position: relative; max-width: 1000px; margin: 0 auto 60px auto; background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.03) 0%, transparent 70%); border: 3px solid; border-image: linear-gradient(45deg, #64b5f6, #9c27b0, #ff6b35, #ffd700) 1; border-radius: 20px; backdrop-filter: blur(10px); overflow: hidden; transition: all 0.5s ease;">
+                    <div style="display: flex; min-height: 400px;">
+                        <div style="flex: 1; background: linear-gradient(135deg, rgba(255, 71, 87, 0.1) 0%, rgba(0, 0, 0, 0.8) 100%); padding: 30px; position: relative; border-right: 2px solid rgba(255, 255, 255, 0.1);">
+                            <div style="font-size: 1.8em; font-weight: bold; text-align: center; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 2px; color: #ff4757; text-shadow: 0 0 20px rgba(255, 71, 87, 0.5);">The Shadow Whispers</div>
+                            <div style="margin-bottom: 25px; padding: 20px; border-radius: 10px; line-height: 1.6; transition: all 0.3s ease; cursor: pointer; position: relative; overflow: hidden; background: rgba(255, 71, 87, 0.1); border: 1px solid rgba(255, 71, 87, 0.3);">
+                                <div style="font-style: italic; color: #ffcdd2; margin-bottom: 10px;">"I need to find myself."</div>
+                            </div>
+                            <div style="margin-bottom: 25px; padding: 20px; border-radius: 10px; line-height: 1.6; transition: all 0.3s ease; cursor: pointer; position: relative; overflow: hidden; background: rgba(255, 71, 87, 0.1); border: 1px solid rgba(255, 71, 87, 0.3);">
+                                <div style="font-style: italic; color: #ffcdd2; margin-bottom: 10px;">"I'm basically a good person."</div>
+                            </div>
+                            <div style="margin-bottom: 25px; padding: 20px; border-radius: 10px; line-height: 1.6; transition: all 0.3s ease; cursor: pointer; position: relative; overflow: hidden; background: rgba(255, 71, 87, 0.1); border: 1px solid rgba(255, 71, 87, 0.3);">
+                                <div style="font-style: italic; color: #ffcdd2; margin-bottom: 10px;">"I'm too far gone for God."</div>
+                            </div>
+                        </div>
+                        <div style="flex: 1; background: linear-gradient(135deg, rgba(100, 181, 246, 0.1) 0%, rgba(255, 215, 0, 0.05) 100%); padding: 30px; position: relative;">
+                            <div style="font-size: 1.8em; font-weight: bold; text-align: center; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 2px; color: #ffd700; text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);">The Light Responds</div>
+                            <div style="margin-bottom: 25px; padding: 20px; border-radius: 10px; line-height: 1.6; transition: all 0.3s ease; cursor: pointer; position: relative; overflow: hidden; background: rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.3);">
+                                <div style="font-weight: bold; color: #fff9c4;">"You are found in Me. Stop searching; start surrendering."</div>
+                            </div>
+                            <div style="margin-bottom: 25px; padding: 20px; border-radius: 10px; line-height: 1.6; transition: all 0.3s ease; cursor: pointer; position: relative; overflow: hidden; background: rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.3);">
+                                <div style="font-weight: bold; color: #fff9c4;">"All have fallen short of perfection. Your goodness is not the measure; My grace is."</div>
+                            </div>
+                            <div style="margin-bottom: 25px; padding: 20px; border-radius: 10px; line-height: 1.6; transition: all 0.3s ease; cursor: pointer; position: relative; overflow: hidden; background: rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.3);">
+                                <div style="font-weight: bold; color: #fff9c4;">"Where your failure abounds, My grace abounds more. Come as you are."</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="background: rgba(156, 39, 176, 0.1); border: 2px solid #9c27b0; border-radius: 20px; padding: 40px; max-width: 900px; margin: 60px auto; text-align: center;">
+                    <div style="font-size: 2.2em; color: #9c27b0; font-weight: bold; margin-bottom: 25px;">If You Recognized Yourself</div>
+                    <div style="font-size: 1.3em; line-height: 1.8; color: #e0e6ed;">
+                        If you recognized your own thoughts in the shadows, do not be discouraged. You are not alone. You have simply identified the nature of the veil. You have seen the patterns of decoherence for what they are.<br><br>
+                        <strong>And seeing the veil is the first step to seeing through it.</strong>
+                    </div>
+                </div>
+                
+                <div style="background: linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(100, 181, 246, 0.1) 100%); border: 3px solid; border-image: linear-gradient(45deg, #ffd700, #64b5f6) 1; border-radius: 25px; padding: 50px; max-width: 1000px; margin: 80px auto; text-align: center; position: relative; overflow: hidden;">
+                    <div style="position: relative; z-index: 2;">
+                        <div style="font-size: 2.8em; font-weight: bold; background: linear-gradient(45deg, #ffd700, #64b5f6, #9c27b0); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 30px;">THE THRESHOLD</div>
+                        <div style="font-size: 1.4em; line-height: 1.8; color: #e0e6ed; margin-bottom: 40px;">
+                            Our journey of reason is complete. We began with a simple question about building and breaking, and arrived at the proof of a Creator and the identification of our resistance to Him.<br><br>
+                            <strong>The intellectual case is now closed. We stand at a threshold.</strong><br><br>
+                            The logical proof can take you no further.
+                        </div>
+                        <div style="background: rgba(0, 0, 0, 0.4); border: 2px solid #ffd700; border-radius: 15px; padding: 30px; margin-top: 30px; backdrop-filter: blur(10px);">
+                            <div style="font-size: 1.8em; color: #ffd700; font-weight: bold; margin-bottom: 20px;">The Final Experiment</div>
+                            <div style="font-size: 1.2em; line-height: 1.7; color: #f0f0f0;">
+                                You don't need a cathedral or a priest. You don't need to have all the answers. All you need is a quiet moment and a single, honest question:<br><br>
+                                <em>"If the Artist we have proven exists is real, show me. If the veil of resistance in my heart is real, clear it."</em><br><br>
+                                That's it. That is the entire experiment. A prayer of pure intellectual and spiritual honesty.<br><br>
+                                <strong>The choice, as it has always been, is yours.</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="page-navigation">
+                <a href="#" class="nav-button" onclick="showPage('resistance')">← The Resistance</a>
+                <span style="color: var(--gold-primary); font-weight: 600;">Personal Mirror Complete</span>
+                <a href="#" class="nav-button" onclick="showPage('conclusion')">Final Choice →</a>
+            </div><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Unavoidable Conclusion: A Proof of God from First Principles</title>
+    <style>
+        :root {
+            --bg-primary: #0f0f0f;
+            --bg-secondary: #1a1a1a;
+            --bg-tertiary: #2a2a2a;
+            --gold-primary: #D4AF37;
+            --gold-light: #F4E4A1;
+            --blue-primary: #2E86AB;
+            --blue-light: #A9D6E5;
+            --white-primary: #F8F9FA;
+            --gray-light: #E9ECEF;
+            --gray-medium: #ADB5BD;
+            --gray-dark: #495057;
+            --accent-gradient: linear-gradient(135deg, var(--gold-primary), var(--blue-primary));
+            --shadow-subtle: 0 2px 10px rgba(0,0,0,0.1);
+            --shadow-medium: 0 5px 25px rgba(0,0,0,0.15);
+            --shadow-strong: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            line-height: 1.7;
+            color: var(--white-primary);
+            background: var(--bg-primary);
+            font-size: 16px;
+            overflow-x: hidden;
+        }
+
+        /* Fixed Navigation Bar */
+        .fixed-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(26, 26, 26, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--gray-dark);
+            transition: all 0.3s ease;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+        }
+
+        .nav-logo {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--gold-primary);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--white-primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+        }
+
+        .nav-links a:hover,
+        .nav-links a.active {
+            color: var(--gold-primary);
+            background: rgba(212, 175, 55, 0.1);
+        }
+
+        .mobile-menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--white-primary);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        /* Main Content Container */
+        .site-container {
+            margin-top: 80px;
+        }
+
+        .page-section {
+            min-height: calc(100vh - 80px);
+            padding: 4rem 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+            display: none;
+        }
+
+        .page-section.active {
+            display: block;
+        }
+
+        .page-section.home {
+            display: block;
+        }
+
+        /* Enhanced Header for Home */
+        .hero-header {
+            background: var(--accent-gradient);
+            color: var(--bg-primary);
+            padding: 6rem 3rem 4rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            margin: -4rem -2rem 4rem -2rem;
+        }
+
+        .hero-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 30px 30px;
+            animation: starField 20s linear infinite;
+        }
+
+        @keyframes starField {
+            0% { transform: rotate(0deg) scale(1); }
+            100% { transform: rotate(360deg) scale(1.1); }
+        }
+
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 1;
+            line-height: 1.1;
+        }
+
+        .hero-subtitle {
+            font-size: 1.6rem;
+            font-weight: 300;
+            margin-bottom: 3rem;
+            position: relative;
+            z-index: 1;
+            opacity: 0.95;
+        }
+
+        .hero-cta {
+            display: inline-block;
+            background: rgba(0,0,0,0.2);
+            padding: 1rem 3rem;
+            border-radius: 50px;
+            text-decoration: none;
+            color: inherit;
+            font-weight: 600;
+            font-size: 1.2rem;
+            position: relative;
+            z-index: 1;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255,255,255,0.3);
+            transition: all 0.3s ease;
+        }
+
+        .hero-cta:hover {
+            background: rgba(0,0,0,0.4);
+            border-color: rgba(255,255,255,0.6);
+            transform: translateY(-2px);
+        }
+
+        /* Chapter Overview Grid */
+        .chapter-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 4rem 0;
+        }
+
+        .chapter-card {
+            background: linear-gradient(145deg, var(--bg-tertiary), var(--bg-secondary));
+            padding: 2.5rem;
+            border-radius: 15px;
+            border: 2px solid var(--gray-dark);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chapter-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--accent-gradient);
+        }
+
+        .chapter-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-strong);
+            border-color: var(--gold-primary);
+        }
+
+        .chapter-number {
+            background: var(--accent-gradient);
+            color: var(--bg-primary);
+            font-size: 1.5rem;
+            font-weight: bold;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow-medium);
+        }
+
+        .chapter-title {
+            color: var(--gold-primary);
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .chapter-description {
+            color: var(--gray-light);
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+
+        .chapter-link {
+            color: var(--blue-light);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        /* Section Styling */
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .section-number {
+            background: var(--accent-gradient);
+            color: var(--bg-primary);
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 0.8rem 1.5rem;
+            border-radius: 50px;
+            display: inline-block;
+            margin-bottom: 1rem;
+            box-shadow: var(--shadow-medium);
+        }
+
+        .section-title {
+            color: var(--gold-primary);
+            font-size: 2.8rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .section-subtitle {
+            color: var(--gray-light);
+            font-size: 1.2rem;
+            font-style: italic;
+        }
+
+        /* Content Styling */
+        .content-text {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            margin-bottom: 2rem;
+        }
+
+        .content-text p {
+            margin-bottom: 1.5rem;
+        }
+
+        .question-box {
+            background: rgba(212, 175, 55, 0.1);
+            padding: 2rem;
+            border-radius: 15px;
+            border-left: 5px solid var(--gold-primary);
+            margin: 2rem 0;
+            text-align: center;
+        }
+
+        .question-title {
+            color: var(--gold-primary);
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .question-text {
+            font-size: 1.2rem;
+            font-weight: 600;
+            font-style: italic;
+        }
+
+        .answer-box {
+            background: rgba(46, 134, 171, 0.1);
+            padding: 1.5rem;
+            border-radius: 10px;
+            border-left: 5px solid var(--blue-primary);
+            margin: 1.5rem 0;
+            text-align: center;
+        }
+
+        .answer-text {
+            color: var(--blue-light);
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+
+        /* Navigation Between Pages */
+        .page-navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 4rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--gray-dark);
+        }
+
+        .nav-button {
+            background: var(--accent-gradient);
+            color: var(--bg-primary);
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .nav-button:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .nav-button.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Progress Indicator */
+        .progress-bar {
+            position: fixed;
+            top: 80px;
+            left: 0;
+            height: 3px;
+            background: var(--accent-gradient);
+            z-index: 999;
+            transition: width 0.3s ease;
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: var(--bg-secondary);
+                flex-direction: column;
+                padding: 1rem;
+                border-top: 1px solid var(--gray-dark);
+            }
+
+            .nav-links.open {
+                display: flex;
+            }
+
+            .mobile-menu-toggle {
+                display: block;
+            }
+
+            .hero-title {
+                font-size: 2.5rem;
+            }
+
+            .hero-subtitle {
+                font-size: 1.2rem;
+            }
+
+            .chapter-overview {
+                grid-template-columns: 1fr;
+            }
+
+            .page-navigation {
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+
+        /* Smooth Animations */
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Print Styles */
+        @media print {
+            .fixed-nav, .page-navigation, .progress-bar { display: none; }
+            .site-container { margin-top: 0; }
+            body { background: white; color: black; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Progress Bar -->
+    <div class="progress-bar" id="progressBar"></div>
+
+    <!-- Fixed Navigation -->
+    <nav class="fixed-nav">
+        <div class="nav-container">
+            <div class="nav-logo">THEOPHYSICS</div>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="#" onclick="showPage('home')" class="active">Home</a></li>
+                <li><a href="#" onclick="showPage('gates-visual')">3 Gates Visual</a></li>
+                <li><a href="#" onclick="showPage('gate1')">Gate 1</a></li>
+                <li><a href="#" onclick="showPage('gate2')">Gate 2</a></li>
+                <li><a href="#" onclick="showPage('gate3')">Gate 3</a></li>
+                <li><a href="#" onclick="showPage('empty-room')">Empty Room</a></li>
+                <li><a href="#" onclick="showPage('rebel-profile')">The Rebel</a></li>
+                <li><a href="#" onclick="showPage('gauntlet')">Gauntlet</a></li>
+                <li><a href="#" onclick="showPage('personal-gauntlet')">Personal Test</a></li>
+                <li><a href="#" onclick="showPage('conclusion')">Conclusion</a></li>
+            </ul>
+            <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">☰</button>
+        </div>
+    </nav>
+
+    <div class="site-container">
+        <!-- HOME PAGE -->
+        <section class="page-section home active" id="home">
+            <div class="hero-header">
+                <h1 class="hero-title">The Unavoidable Conclusion</h1>
+                <p class="hero-subtitle">A Proof of God from First Principles</p>
+                <a href="#" class="hero-cta" onclick="showPage('gate1')">Begin the Journey →</a>
+            </div>
+
+            <div class="content-text">
+                <p><strong>The Promise We're Making:</strong></p>
+                <p>We're not going to ask you to believe anything you don't already know to be true. We won't quote ancient books or ask for blind faith. Instead, we're going to ask you three simple questions about reality itself—questions whose answers are sitting right in front of you.</p>
+                <p>By the time we're done, you'll have used your own logic to reach the most important conclusion of your life.</p>
+                <p style="font-weight: 600; color: var(--gold-primary);">This isn't a sermon. It's a proof.</p>
+            </div>
+
+            <div class="chapter-overview">
+                <div class="chapter-card" onclick="showPage('gates-visual')">
+                    <div class="chapter-number">A</div>
+                    <h3 class="chapter-title">The Three Gates Visual</h3>
+                    <p class="chapter-description">Experience the logical progression through interactive visual gates that prove reality's fundamental structure.</p>
+                    <a href="#" class="chapter-link">See the Gates →</a>
+                </div>
+
+                <div class="chapter-card" onclick="showPage('gate1')">
+                    <div class="chapter-number">1</div>
+                    <h3 class="chapter-title">The Duality Gate</h3>
+                    <p class="chapter-description">Do you see the difference between building and breaking? This simple question unlocks the fundamental structure of reality.</p>
+                    <a href="#" class="chapter-link">Enter Gate 1 →</a>
+                </div>
+
+                <div class="chapter-card" onclick="showPage('gate2')">
+                    <div class="chapter-number">2</div>
+                    <h3 class="chapter-title">The Nature Gate</h3>
+                    <p class="chapter-description">Can pure creativity create pure destruction? The answer reveals the asymmetry at the heart of existence.</p>
+                    <a href="#" class="chapter-link">Enter Gate 2 →</a>
+                </div>
+
+                <div class="chapter-card" onclick="showPage('gate3')">
+                    <div class="chapter-number">3</div>
+                    <h3 class="chapter-title">The Shadow Gate</h3>
+                    <p class="chapter-description">What do shadows tell us about light? The final piece of the logical puzzle falls into place.</p>
+                    <a href="#" class="chapter-link">Enter Gate 3 →</a>
+                </div>
+
+                <div class="chapter-card" onclick="showPage('empty-room')">
+                    <div class="chapter-number">B</div>
+                    <h3 class="chapter-title">The Empty Room Experiment</h3>
+                    <p class="chapter-description">A tale of two rooms: What can absolute nothing create? Experience the ultimate thought experiment.</p>
+                    <a href="#" class="chapter-link">Enter the Void →</a>
+                </div>
+
+                <div class="chapter-card" onclick="showPage('rebel-profile')">
+                    <div class="chapter-number">C</div>
+                    <h3 class="chapter-title">Profile of a Rebel</h3>
+                    <p class="chapter-description">We've proven a shadow exists. Now let's identify its source through logical profiling.</p>
+                    <a href="#" class="chapter-link">Meet the Rebel →</a>
+                </div>
+
+                <div class="chapter-card" onclick="showPage('gauntlet')">
+                    <div class="chapter-number">4</div>
+                    <h3 class="chapter-title">The Great Filter Gauntlet</h3>
+                    <p class="chapter-description">Testing the "cosmic accident" theory against the strict rules of mathematics and science.</p>
+                    <a href="#" class="chapter-link">Enter the Gauntlet →</a>
+                </div>
+
+                <div class="chapter-card" onclick="showPage('personal-gauntlet')">
+                    <div class="chapter-number">D</div>
+                    <h3 class="chapter-title">The Personal Gauntlet</h3>
+                    <p class="chapter-description">The final test is personal. A mirror for your soul to recognize the patterns within.</p>
+                    <a href="#" class="chapter-link">Face the Mirror →</a>
+                </div>
+
+                <div class="chapter-card" onclick="showPage('conclusion')">
+                    <div class="chapter-number">6</div>
+                    <h3 class="chapter-title">The Final Experiment</h3>
+                    <p class="chapter-description">Logic has taken us to the threshold. Only you can take the final step.</p>
+                    <a href="#" class="chapter-link">The Choice →</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- GATE 1 PAGE -->
+        <section class="page-section" id="gate1">
+            <div class="section-header">
+                <div class="section-number">Gate 1</div>
+                <h2 class="section-title">The Duality Gate</h2>
+                <p class="section-subtitle">A Question of Building and Breaking</p>
+            </div>
+
+            <div class="content-text">
+                <p>Look around the universe—stars, cells, music, buildings. You'll notice almost every process falls into one of two categories.</p>
+                
+                <p>On one side, you have <strong>creation, order, and connection</strong>. Picture a star forming from a cloud of cosmic dust, a DNA molecule copying itself to build life, a spider weaving a delicate web, or a composer crafting a symphony that blends notes into harmony. These processes take simple parts and build them into something more complex, connected, and meaningful.</p>
+                
+                <p>On the other side, you have <strong>destruction, chaos, and disconnection</strong>. Think of a star exploding in a supernova, scattering its pieces; a protein breaking down in heat; a spider's web torn apart by wind; or a symphony dissolving into random, jarring noise, losing all structure. These processes take something whole and break it into simpler, less functional parts.</p>
+                
+                <p>This isn't about "good" or "bad" yet—it's just how reality works. We see order, and we see chaos. Construction, and destruction.</p>
+            </div>
+
+            <div class="question-box">
+                <div class="question-title">The First Gate Question</div>
+                <div class="question-text">Do you agree that there is a meaningful, objective difference between an act of creation and an act of destruction?</div>
+            </div>
+
+            <div class="answer-box">
+                <div class="answer-text">YES</div>
+            </div>
+
+            <div class="content-text">
+                <p>The only possible answer, if we are to have a sane conversation, is "Yes." To argue that building a house and demolishing it are fundamentally the same kind of act is to abandon reason itself.</p>
+                
+                <p><strong>Congratulations. You have just passed through the first gate.</strong> You have agreed to a foundational truth: reality has a built-in duality. <strong>Coherence</strong> (building, creating) and <strong>Decoherence</strong> (breaking, destroying) are not the same thing.</p>
+                
+                <p>Let's call the principle of order, creation, connection, and being <strong>"Coherence"</strong> (+1). And let's call the principle of chaos, destruction, severance, and non-being <strong>"Decoherence"</strong> (-1).</p>
+            </div>
+
+            <div class="page-navigation">
+                <a href="#" class="nav-button disabled">← Previous</a>
+                <span style="color: var(--gold-primary); font-weight: 600;">Gate 1 of 3</span>
+                <a href="#" class="nav-button" onclick="showPage('gate2')">Next Gate →</a>
+            </div>
+        </section>
+
+        <!-- GATE 2 PAGE -->
+        <section class="page-section" id="gate2">
+            <div class="section-header">
+                <div class="section-number">Gate 2</div>
+                <h2 class="section-title">The Nature Gate</h2>
+                <p class="section-subtitle">A Question of Essential Natures</p>
+            </div>
+
+            <div class="content-text">
+                <p>We've established our foundation: <strong>Coherence</strong> (order, creation) and <strong>Decoherence</strong> (chaos, destruction) are fundamentally different.</p>
+                
+                <p>Now, with these precise terms in hand, we arrive at the second gate. This question is the most important one in this entire journey. Please consider it carefully.</p>
+            </div>
+
+            <div class="question-box">
+                <div class="question-title">The Second Gate Question</div>
+                <div class="question-text">Can the fundamental principle of Coherence (+1), by its very nature, perform an act of pure Decoherence (-1)?</div>
+            </div>
+
+            <div class="content-text">
+                <p>Take a moment. This is a question about an essential nature.</p>
+                
+                <p>Can a weaver create a hole <em>by the act of weaving</em>? No. The act of weaving adds thread. To make a hole, the weaver must do the opposite: stop weaving and start cutting or un-weaving.</p>
+                
+                <p>Can a lightbulb, <em>by the act of emitting light</em>, create a patch of pure darkness? No. Its very function is to banish darkness. Darkness is simply where the light is not.</p>
+                
+                <p>Can the number <code>1</code> become <code>-1</code> <em>while remaining <code>1</code></em>? No. It is a logical and mathematical impossibility.</p>
+            </div>
+
+            <div class="answer-box">
+                <div class="answer-text">NO</div>
+            </div>
+
+            <div class="content-text">
+                <p>A principle cannot act in perfect opposition to its own nature without ceasing to be itself. For Coherence to commit an act of pure Decoherence, it would have to contradict its own existence. It would be an act of ontological suicide.</p>
+                
+                <p>This leads us to a profound conclusion: these two principles are not equal and opposite. They are <strong>asymmetrical</strong>. One is primary, creative, and foundational. The other is secondary, parasitic, and destructive. It can only unravel the order that Coherence has already created.</p>
+                
+                <p><strong>Congratulations. You have just passed through the second gate.</strong> You have, with your own logic, affirmed a fundamental law of reality: the creative principle cannot be, and cannot commit, the destructive principle.</p>
+            </div>
+
+            <div class="page-navigation">
+                <a href="#" class="nav-button" onclick="showPage('gate1')">← Gate 1</a>
+                <span style="color: var(--gold-primary); font-weight: 600;">Gate 2 of 3</span>
+                <a href="#" class="nav-button" onclick="showPage('gate3')">Final Gate →</a>
+            </div>
+        </section>
+
+        <!-- GATE 3 PAGE -->
+        <section class="page-section" id="gate3">
+            <div class="section-header">
+                <div class="section-number">Gate 3</div>
+                <h2 class="section-title">The Shadow Gate</h2>
+                <p class="section-subtitle">A Question of Obstruction</p>
+            </div>
+
+            <div class="content-text">
+                <p>So, we have established two undeniable truths:</p>
+                <ol style="margin-left: 2rem; margin-bottom: 2rem;">
+                    <li>There is a real difference between the creative act (light) and the destructive void (darkness).</li>
+                    <li>The source of the light, by its nature, cannot create the darkness.</li>
+                </ol>
+                
+                <p>Now we must look at the world around us. We see incredible coherence—life, logic, love, beauty. But we also see profound decoherence—death, chaos, hatred, and suffering. We see the light, but we also see shadows everywhere.</p>
+                
+                <p>This brings us to the third and final gate. This is the question that has launched a thousand philosophical debates, yet the answer is now surprisingly simple, based on the laws we've already agreed upon.</p>
+            </div>
+
+            <div class="question-box">
+                <div class="question-title">The Third Gate Question</div>
+                <div class="question-text">If the ultimate source of reality is pure Coherence (the Sun), and it cannot, by its nature, create Decoherence (darkness), what does the existence of shadows in our world prove?</div>
+            </div>
+
+            <div class="content-text">
+                <p>Think carefully.</p>
+                
+                <p>If you are standing in the brilliant light of the sun and you see a shadow on the ground, what have you learned?</p>
+                
+                <p>You have not learned that the sun is faulty or that it has a "dark side." You have not learned that light creates darkness.</p>
+                
+                <p>You have learned something much simpler and more profound: <strong>Something is blocking the light.</strong></p>
+            </div>
+
+            <div class="answer-box">
+                <div class="answer-text">OBSTRUCTION</div>
+            </div>
+
+            <div class="content-text">
+                <p>The shadow is not proof of a flawed sun. It is proof of an obstruction.</p>
+                
+                <p>This is the final, unavoidable conclusion of our three questions. The existence of evil, suffering, and chaos in the world does not disprove the existence of a purely good, coherent, creative source. In fact, based on the logic we have just proven, it does the opposite.</p>
+                
+                <p><strong>It proves that the Source <em>must</em> be purely Coherent, and that the evil we experience is a separate, secondary phenomenon—an obstruction, a rebellion, a shadow cast by something turning away from the light.</strong></p>
+                
+                <p><strong>You have now passed through the third gate.</strong> You have just taken the "Problem of Evil," the greatest argument <em>against</em> the existence of God, and proven that it is actually one of the most powerful arguments <em>for</em> it.</p>
+                
+                <p>We have proven that a shadow exists, and we have proven that it is not cast by the Light itself.</p>
+                
+                <p>The next logical question is obvious: <strong>What is casting it?</strong></p>
+            </div>
+
+            <div class="page-navigation">
+                <a href="#" class="nav-button" onclick="showPage('gate2')">← Gate 2</a>
+                <span style="color: var(--gold-primary); font-weight: 600;">Gate 3 of 3</span>
+                <a href="#" class="nav-button" onclick="showPage('shadow')">Find the Shadow →</a>
+            </div>
+        </section>
+
+        <!-- SHADOW PAGE -->
+        <section class="page-section" id="shadow">
+            <div class="section-header">
+                <div class="section-number">Part II</div>
+                <h2 class="section-title">The Face of the Shadow</h2>
+                <p class="section-subtitle">The Profile of a Rebel</p>
+            </div>
+
+            <div class="content-text">
+                <p>We have moved beyond abstract principles and are now on the hunt for a specific cause. If this "obstruction" is real—if there is a principle of active, intelligent, willful rebellion against Coherence at work in the universe—does it have a name? Does it have a face?</p>
+                
+                <p>History offers one primary candidate for this role, an archetype so ancient and pervasive it appears in cultures and religions across the world: the Adversary. The Tempter. The Father of Lies. In the biblical narrative, he is called <strong>Satan</strong>.</p>
+                
+                <p>Let's treat the biblical "Satan" not as a religious dogma, but as a profile of a suspect. Let's run this suspect through a rigorous logical gauntlet to see if he fits the crime scene we've just uncovered.</p>
+                
+                <p>To qualify as the true source of the shadow—the prime agent of Decoherence—this entity would need to meet three very specific criteria:</p>
+            </div>
+
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin: 3rem 0;">
+                <div style="background: var(--bg-tertiary); padding: 2rem; border-radius: 15px; border-left: 5px solid var(--gold-primary);">
+                    <h4 style="color: var(--gold-primary); margin-bottom: 1rem;">1. The Spontaneity Test</h4>
+                    <p>It cannot have been created evil. The rebel must be a being that was originally coherent—good, created in the light—who <em>chose</em> to become decoherent. The rebellion must be a spontaneous choice, not a created nature.</p>
+                </div>
+
+                <div style="background: var(--bg-tertiary); padding: 2rem; border-radius: 15px; border-left: 5px solid var(--blue-primary);">
+                    <h4 style="color: var(--blue-primary); margin-bottom: 1rem;">2. The Primary Function Test</h4>
+                    <p>Its core motivation must be Decoherence itself. Its primary goal must be to sever, to corrupt, to lie, and to destroy. Destruction cannot be a tool for another goal; destruction <em>is</em> the goal.</p>
+                </div>
+
+                <div style="background: var(--bg-tertiary); padding: 2rem; border-radius: 15px; border-left: 5px solid var(--gold-primary);">
+                    <h4 style="color: var(--gold-primary); margin-bottom: 1rem;">3. The Stability Test</h4>
+                    <p>It must be a powerful but finite force. Our logic proves Decoherence is parasitic and secondary. The ultimate rebel must have a pre-written, guaranteed, ultimate defeat.</p>
+                </div>
+            </div>
+
+            <div class="content-text">
+                <p>Now, let's analyze the suspect. The biblical archetype of Satan fits this three-part profile with breathtaking precision:</p>
+                
+                <ul style="margin-left: 2rem; margin-bottom: 2rem;">
+                    <li><strong>Originally Coherent:</strong> He is described as a high angel, Lucifer, a "light-bearer," perfect in his ways from the day he was created... <em>until</em> iniquity was found in him. He was a coherent being who chose rebellion. <span style="color: var(--gold-primary);">✓ Passes the Spontaneity Test</span></li>
+                    <li><strong>Willfully Decoherent:</strong> His explicit purpose is described as being to "steal, kill, and destroy." He is called the "father of lies," the ultimate source of spiritual noise and corruption. <span style="color: var(--blue-primary);">✓ Passes the Primary Function Test</span></li>
+                    <li><strong>Finite:</strong> The very same narrative that describes his power also explicitly describes his final, absolute judgment and defeat. He is a temporary antagonist whose ending has already been written. <span style="color: var(--gold-primary);">✓ Passes the Stability Test</span></li>
+                </ul>
+                
+                <p><strong>The profile fits. Perfectly.</strong></p>
+                
+                <p>We have now moved from an abstract proof of a shadow to a logically sound identification of its most likely source. We have given the shadow a face.</p>
+                
+                <p>And a rebel, by definition, must be rebelling <em>against</em> something. Which brings us to our next investigation.</p>
+            </div>
+
+            <div class="page-navigation">
+                <a href="#" class="nav-button" onclick="showPage('gate3')">← The Gates</a>
+                <span style="color: var(--gold-primary); font-weight: 600;">The Shadow Identified</span>
+                <a href="#" class="nav-button" onclick="showPage('gauntlet')">Test the Alternative →</a>
+            </div>
+        </section>
+
+        <!-- GAUNTLET PAGE -->
+        <section class="page-section" id="gauntlet">
+            <div class="section-header">
+                <div class="section-number">Part III</div>
+                <h2 class="section-title">The Great Filter Gauntlet</h2>
+                <p class="section-subtitle">Testing the "Cosmic Lottery" Alternative</p>
+            </div>
+
+            <div class="content-text">
+                <p>We have arrived at a profound conclusion: the source of our universe must be an eternal, coherent, creative "Something."</p>
+                
+                <p>But the modern skeptic has a name for this "Something": they call it <strong>Chance</strong>. Their story, the "Cosmic Lottery," goes like this: 13.8 billion years ago, a random fluctuation sparked the Big Bang. The laws of physics just happened to be perfect for life. On a perfectly placed planet, non-living chemicals just happened to assemble themselves into the first living cell. Then, a series of random genetic mistakes just happened to write the blueprints for every complex creature, and finally, mindless matter just happened to wake up and start contemplating its own existence.</p>
+                
+                <p><strong>This is their story. Now, we are going to put it on trial.</strong></p>
+                
+                <p>We will use only the tools that science itself is built upon: <strong>strict logic, mathematical probability, and direct, observational science.</strong></p>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; margin: 3rem 0;">
+                <div style="background: var(--bg-tertiary); padding: 2rem; border-radius: 15px; border: 2px solid var(--gray-dark); text-align: center;">
+                    <h4 style="color: var(--gold-primary); margin-bottom: 1rem;">Fine-Tuning Filter</h4>
+                    <p style="margin-bottom: 1rem;">The fundamental constants of physics had to be set with mathematical precision beyond human comprehension.</p>
+                    <div style="color: var(--blue-light); font-size: 1.8rem; font-weight: bold; margin: 1rem 0; font-family: 'Courier New', monospace;">1 in 10¹²⁰</div>
+                    <div style="background: rgba(255, 71, 87, 0.2); color: #ff4757; padding: 0.5rem 1rem; border-radius: 20px; font-weight: bold;">IMPOSSIBLE</div>
+                </div>
+
+                <div style="background: var(--bg-tertiary); padding: 2rem; border-radius: 15px; border: 2px solid var(--gray-dark); text-align: center;">
+                    <h4 style="color: var(--gold-primary); margin-bottom: 1rem;">Abiogenesis Filter</h4>
+                    <p style="margin-bottom: 1rem;">Non-living chemicals had to spontaneously arrange into the first self-replicating cell.</p>
+                    <div style="color: var(--blue-light); font-size: 1.8rem; font-weight: bold; margin: 1rem 0; font-family: 'Courier New', monospace;">1 in 10⁴⁰'⁰⁰⁰</div>
+                    <div style="background: rgba(255, 71, 87, 0.2); color: #ff4757; padding: 0.5rem 1rem; border-radius: 20px; font-weight: bold;">ABSURD</div>
+                </div>
+
+                <div style="background: var(--bg-tertiary); padding: 2rem; border-radius: 15px; border: 2px solid var(--gray-dark); text-align: center;">
+                    <h4 style="color: var(--gold-primary); margin-bottom: 1rem;">Information Filter</h4>
+                    <p style="margin-bottom: 1rem;">Random mutations had to write trillions of letters of new, functional genetic information.</p>
+                    <div style="color: var(--blue-light); font-size: 1.8rem; font-weight: bold; margin: 1rem 0; font-family: 'Courier New', monospace;">1 in 10⁶⁰⁰</div>
+                    <div style="background: rgba(255, 71, 87, 0.2); color: #ff4757; padding: 0.5rem 1rem; border-radius: 20px; font-weight: bold;">FANTASY</div>
+                </div>
+
+                <div style="background: var(--bg-tertiary); padding: 2rem; border-radius: 15px; border: 2px solid var(--gray-dark); text-align: center;">
+                    <h4 style="color: var(--gold-primary); margin-bottom: 1rem;">Consciousness Filter</h4>
+                    <p style="margin-bottom: 1rem;">Mindless matter had to give rise to consciousness, reason, love, and self-awareness.</p>
+                    <div style="color: var(--blue-light); font-size: 1.8rem; font-weight: bold; margin: 1rem 0; font-family: 'Courier New', monospace;">Category Error</div>
+                    <div style="background: rgba(255, 71, 87, 0.2); color: #ff4757; padding: 0.5rem 1rem; border-radius: 20px; font-weight: bold;">IMPOSSIBLE</div>
+                </div>
+            </div>
+
+            <div style="background: var(--accent-gradient); color: var(--bg-primary); padding: 3rem; border-radius: 20px; margin: 3rem 0; box-shadow: var(--shadow-strong); text-align: center;">
+                <h3 style="font-size: 2rem; margin-bottom: 1.5rem;">The Gauntlet Verdict</h3>
+                <p style="font-size: 1.2rem; line-height: 1.8;">
+                    To believe the "Cosmic Lottery" narrative, you must believe in a series of at least <strong>four miracles</strong>, each with odds so infinitesimally small they are functionally zero.<br><br>
+                    <strong>The only alternative left standing: An Artist's Blueprint.</strong>
+                </p>
+            </div>
+
+            <div class="page-navigation">
+                <a href="#" class="nav-button" onclick="showPage('shadow')">← The Shadow</a>
+                <span style="color: var(--gold-primary); font-weight: 600;">Mathematics Complete</span>
+                <a href="#" class="nav-button" onclick="showPage('resistance')">Face the Mirror →</a>
+            </div>
+        </section>
+
+        <!-- RESISTANCE PAGE -->
+        <section class="page-section" id="resistance">
+            <div class="section-header">
+                <div class="section-number">Part IV</div>
+                <h2 class="section-title">The Great Resistance</h2>
+                <p class="section-subtitle">The Veil in the Human Heart</p>
+            </div>
+
+            <div class="content-text">
+                <p>We stand now at a crossroads of reason. We began with three simple questions and proved that the evil in our world is a shadow cast by a secondary, rebellious force. We then proved the source of our universe must be an eternal, creative Being. Finally, we placed the only competing story—the Cosmic Lottery—into a gauntlet of its own scientific standards, and we watched it turn to dust.</p>
+                
+                <p><strong>The intellectual case is closed.</strong> The materialist worldview has been shown to be a faith in a series of impossible miracles. The only conclusion left standing is that our universe is the work of an Artist.</p>
+                
+                <p>And yet, we must ask the most human question of all:</p>
+                
+                <p style="text-align: center; font-size: 1.3rem; color: var(--gold-primary); font-weight: 600; margin: 2rem 0;"><strong>If this is so obvious, why doesn't everyone believe it?</strong></p>
+                
+                <p>The answer is that the primary barrier to believing in God has never been a lack of evidence for the mind. It has always been a condition of the heart.</p>
+                
+                <p>The same shadow we proved exists "out there" also whispers "in here." It wove a veil of decoherence directly into the human soul. Let's call it <strong>The Great Resistance</strong>:</p>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin: 3rem 0; border-radius: 15px; overflow: hidden; box-shadow: var(--shadow-strong);">
+                <div style="background: linear-gradient(135deg, rgba(255, 71, 87, 0.1), rgba(139, 69, 19, 0.1)); padding: 2.5rem; border-right: 2px solid var(--gray-dark);">
+                    <h4 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 2rem; text-align: center; text-transform: uppercase; letter-spacing: 1px; color: #ff6b6b;">The Shadow Whispers</h4>
+                    
+                    <div style="background: rgba(255,255,255,0.05); padding: 1rem; margin: 1rem 0; border-radius: 8px; border-left: 3px solid #ff6b6b; font-style: italic;">
+                        "I need to find myself."
+                    </div>
+                    <div style="background: rgba(255,255,255,0.05); padding: 1rem; margin: 1rem 0; border-radius: 8px; border-left: 3px solid #ff6b6b; font-style: italic;">
+                        "I'm basically a good person."
+                    </div>
+                    <div style="background: rgba(255,255,255,0.05); padding: 1rem; margin: 1rem 0; border-radius: 8px; border-left: 3px solid #ff6b6b; font-style: italic;">
+                        "Follow your heart."
+                    </div>
+                    <div style="background: rgba(255,255,255,0.05); padding: 1rem; margin: 1rem 0; border-radius: 8px; border-left: 3px solid #ff6b6b; font-style: italic;">
+                        "All roads lead to heaven."
+                    </div>
+                    <div style="background: rgba(255,255,255,0.05); padding: 1rem; margin: 1rem 0; border-radius: 8px; border-left: 3px solid #ff6b6b; font-style: italic;">
+                        "I don't have time for God right now."
+                    </div>
+                </div>
+
+                <div style="background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), rgba(46, 134, 171, 0.1)); padding: 2.5rem;">
+                    <h4 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 2rem; text-align: center; text-transform: uppercase; letter-spacing: 1px; color: var(--gold-primary);">The Light Responds</h4>
+                    
+                    <div style="background: rgba(255,255,255,0.05); padding: 1rem; margin: 1rem 0; border-radius: 8px; border-left: 3px solid var(--gold-primary); font-style: italic;">
+                        "You are found in Me—stop searching, start surrendering."
+                    </div>
+                    <div style="background: rgba(255,255,255,0.05); padding: 1rem; margin: 1rem 0; border-radius: 8px; border-left: 3px solid var(--gold-primary); font-style: italic;">
+                        "All fall short of perfection—grace is the measure, not goodness."
+                    </div>
+                    <div style="background: rgba(255,255,255,0.05); padding: 1rem; margin: 1rem 0; border-radius: 8px; border-left: 3px solid var(--gold-primary); font-style: italic;">
+                        "The heart deceives—follow truth instead."
+                    </div>
+                    <div style="background: rgba(255,255,255,0.05); padding: 1rem; margin: 1rem 0; border-radius: 8px; border-left: 3px solid var(--gold-primary); font-style: italic;">
+                        "I am the way—there are not multiple truths."
+                    </div>
+                    <div style="background: rgba(255,255,255,0.05); padding: 1rem; margin: 1rem 0; border-radius: 8px; border-left: 3px solid var(--gold-primary); font-style: italic;">
+                        "Today is the day—tomorrow isn't promised."
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-text">
+                <p style="text-align: center; font-size: 1.2rem; color: var(--gold-primary);">
+                    If you recognized your own thoughts in the shadows, you've identified the nature of the veil.<br>
+                    <strong>Seeing the veil is the first step to seeing through it.</strong>
+                </p>
+            </div>
+
+            <div class="page-navigation">
+                <a href="#" class="nav-button" onclick="showPage('gauntlet')">← The Gauntlet</a>
+                <span style="color: var(--gold-primary); font-weight: 600;">The Mirror Complete</span>
+                <a href="#" class="nav-button" onclick="showPage('revelation')">The Revelation →</a>
+            </div>
+        </section>
+
+        <!-- REVELATION PAGE -->
+        <section class="page-section" id="revelation">
+            <div class="section-header">
+                <div class="section-number">Part V</div>
+                <h2 class="section-title">The Revelation of the Light</h2>
+                <p class="section-subtitle">The Architect and The Rescuer</p>
+            </div>
+
+            <div class="content-text">
+                <p>We have followed the chain of logic to its end. We stand before an inescapable conclusion: a Creator of infinite intelligence designed our reality. And yet, we have also proven that a deep resistance to this very Creator is woven into the fabric of our own hearts.</p>
+                
+                <p>This leaves us with the ultimate paradox. We have a universe designed with perfect coherence and a humanity riddled with spiritual decoherence called the Great Resistance.</p>
+                
+                <p>If the Artist is as brilliant as the evidence of His creation suggests, He must have known this would happen. He must have anticipated that the freedom He gave us would lead to a rebellion that would blind us to His presence.</p>
+                
+                <p><strong>So, what was His solution?</strong></p>
+                
+                <p>The answer is the most profound revelation in human history. The true story of God is not a single truth, but a two-part narrative that addresses both the evidence in the cosmos and the rebellion in our souls.</p>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; margin: 3rem 0;">
+                <div style="background: var(--bg-tertiary); padding: 2.5rem; border-radius: 15px; border: 2px solid var(--blue-primary);">
+                    <h4 style="color: var(--blue-primary); font-size: 1.5rem; margin-bottom: 1.5rem; text-align: center;">Part 1: God the Architect</h4>
+                    <h5 style="color: var(--blue-light); margin-bottom: 1rem;">The Revelation to the Mind</h5>
+                    <p>This is the part we have already proven. It is the evidence from the Great Filter Gauntlet. It is the undeniable signature of an Artist written into the fine-tuning of physics, the impossible complexity of the cell, and the emergence of consciousness itself.</p>
+                    <p>This revelation speaks to our intellect. It tells us that the source of reality is a being of perfect <strong>Coherence</strong>.</p>
+                </div>
+
+                <div style="background: var(--bg-tertiary); padding: 2.5rem; border-radius: 15px; border: 2px solid var(--gold-primary);">
+                    <h4 style="color: var(--gold-primary); font-size: 1.5rem; margin-bottom: 1.5rem; text-align: center;">Part 2: God the Rescuer</h4>
+                    <h5 style="color: var(--gold-light); margin-bottom: 1rem;">The Revelation to the Heart</h5>
+                    <p>This is the part that directly confronts the Great Resistance. His plan wasn't just to create the world and leave it. His plan included a rescue mission. He didn't just send evidence; He sent Himself.</p>
+                    <p>He embodied the <strong>Logos</strong>—the ultimate principle of Coherence, Truth, and creative order—in a human being, Jesus Christ.</p>
+                </div>
+            </div>
+
+            <div class="content-text">
+                <p>This was not a mere moral example. This was a targeted, metaphysical strike against the very principle of Decoherence:</p>
+                
+                <ul style="margin-left: 2rem; margin-bottom: 2rem;">
+                    <li>The <strong>life</strong> of Jesus was a perfect demonstration of Coherence in a world of chaos, a perfect signal in a universe of noise.</li>
+                    <li>His <strong>death</strong> on the cross was the ultimate act of re-coherence, a willing absorption of all our rebellion, fear, and darkness into Himself.</li>
+                    <li>His <strong>resurrection</strong> from the dead was the definitive proof that Coherence is more powerful than Decoherence. It was the ultimate victory of life over death, of order over chaos, of the Light over the shadow it casts.</li>
+                </ul>
+                
+                <p>Think of how this single act surgically dismantles the three threads of the Great Resistance:</p>
+                
+                <ul style="margin-left: 2rem; margin-bottom: 2rem;">
+                    <li>To our <strong>Pride</strong> that says "I will not have a king," God responds with the ultimate humility—the King becoming a servant.</li>
+                    <li>To our <strong>Fear</strong> that says "I don't want to be accountable," God responds by becoming the payment for our accounts Himself.</li>
+                    <li>To our <strong>Noise</strong> that says "It's all too complicated," God responds with a single, clear, and piercing signal: a person, a choice, a path.</li>
+                </ul>
+                
+                <p><strong>This is the complete story.</strong> The full revelation of God is not just that He is the brilliant Architect who built the house, but that He is also the loving Rescuer who entered the house in flames to carry us out.</p>
+                
+                <p>The first revelation satisfies our mind. This second revelation is the only thing that can save our soul.</p>
+            </div>
+
+            <div class="page-navigation">
+                <a href="#" class="nav-button" onclick="showPage('resistance')">← The Resistance</a>
+                <span style="color: var(--gold-primary); font-weight: 600;">The Complete Picture</span>
+                <a href="#" class="nav-button" onclick="showPage('conclusion')">The Choice →</a>
+            </div>
+        </section>
+
+        <!-- CONCLUSION PAGE -->
+        <section class="page-section" id="conclusion">
+            <div class="section-header">
+                <div class="section-number">Final</div>
+                <h2 class="section-title">The Threshold</h2>
+                <p class="section-subtitle">The Unavoidable Conclusion</p>
+            </div>
+
+            <div class="content-text">
+                <p>Our journey of reason is complete.</p>
+                
+                <p>We began with simple questions about building and breaking, and arrived at proof of a Creator and identification of our resistance to Him. Through pure logic, using only your own reason, you've proven:</p>
+                
+                <ol style="margin-left: 2rem; margin-bottom: 2rem; font-size: 1.1rem;">
+                    <li><strong>Reality has an ultimate source of pure Coherence</strong> (because pure destruction can't exist independently)</li>
+                    <li><strong>This source didn't create the problems we see</strong> (because Coherence can't create Decoherence)</li>
+                    <li><strong>Something else is causing the trouble</strong> (because the shadows are real but not cast by the Light)</li>
+                    <li><strong>The cosmic accident theory is mathematically absurd</strong> (failing every test of science and probability)</li>
+                    <li><strong>Our resistance to this truth comes from within</strong> (the same shadow that exists "out there" whispers "in here")</li>
+                </ol>
+                
+                <p style="font-size: 1.2rem; color: var(--gold-primary); text-align: center; margin: 3rem 0;">
+                    <strong>The intellectual case is now closed.</strong><br>
+                    The logical proof can take you no further.
+                </p>
+            </div>
+
+            <div style="background: var(--accent-gradient); color: var(--bg-primary); padding: 4rem 3rem; border-radius: 20px; margin: 3rem 0; text-align: center;">
+                <h3 style="font-size: 2.2rem; margin-bottom: 2rem;">The Final Experiment</h3>
+                <p style="font-size: 1.1rem; margin-bottom: 2rem;">
+                    You don't need a cathedral or a priest. You don't need to understand everything perfectly. All you need is a quiet moment and one honest question:
+                </p>
+                <div style="font-size: 1.4rem; font-style: italic; line-height: 1.8; margin: 2rem 0; background: rgba(0,0,0,0.2); padding: 2rem; border-radius: 15px; backdrop-filter: blur(10px);">
+                    "If the Creator we just proved exists is real, show me.<br>
+                    If the resistance in my heart is real, clear it."
+                </div>
+                <p style="font-size: 1.1rem; margin-bottom: 1rem;">
+                    That's it. That's the entire experiment. A prayer of complete intellectual and spiritual honesty.
+                </p>
+                <p style="font-weight: 600; font-size: 1.3rem;">
+                    <strong>The choice, as it has always been, is yours.</strong>
+                </p>
+            </div>
+
+            <div style="background: var(--bg-tertiary); padding: 3rem; border-radius: 15px; margin: 3rem 0;">
+                <h4 style="color: var(--gold-primary); font-size: 1.5rem; margin-bottom: 2rem; text-align: center;">Why This Changes Everything</h4>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+                    <div style="text-align: center;">
+                        <div style="color: var(--gold-primary); font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem;">The universe isn't an accident.</div>
+                        <div style="color: var(--gray-light);">It's an artwork.</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="color: var(--gold-primary); font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem;">Evil isn't evidence against God.</div>
+                        <div style="color: var(--gray-light);">It's evidence of rebellion against God.</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="color: var(--gold-primary); font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem;">Life has ultimate meaning.</div>
+                        <div style="color: var(--gray-light);">Your choices echo in eternity.</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="color: var(--gold-primary); font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem;">Death isn't the end.</div>
+                        <div style="color: var(--gray-light);">It's a transition point in a larger story.</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="color: var(--gold-primary); font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem;">You're not alone.</div>
+                        <div style="color: var(--gray-light);">The Creator who fine-tuned galaxies knows your name.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-text">
+                <p style="text-align: center; font-size: 1.2rem; line-height: 1.8;">
+                    This isn't just another philosophical argument. It's the foundation that makes sense of everything else.<br><br>
+                    The truck driver and the professor, the kindergarten teacher and the quantum physicist—we all face the same three questions and arrive at the same unavoidable conclusion.<br><br>
+                    <strong style="color: var(--gold-primary);">Logic itself has become a bridge to the divine.</strong>
+                </p>
+            </div>
+
+            <div class="page-navigation">
+                <a href="#" class="nav-button" onclick="showPage('revelation')">← The Revelation</a>
+                <span style="color: var(--gold-primary); font-weight: 600;">Journey Complete</span>
+                <a href="#" class="nav-button" onclick="showPage('home')">Begin Again →</a>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        let currentPage = 'home';
+        const pages = ['home', 'gates-visual', 'gate1', 'gate2', 'gate3', 'empty-room', 'shadow', 'rebel-profile', 'gauntlet', 'resistance', 'personal-gauntlet', 'revelation', 'conclusion', 'visuals'];
+
+        function showPage(pageId) {
+            // Hide all pages
+            document.querySelectorAll('.page-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Show target page
+            document.getElementById(pageId).classList.add('active');
+            
+            // Update navigation
+            document.querySelectorAll('.nav-links a').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            const activeLink = document.querySelector(`[onclick="showPage('${pageId}')"]`);
+            if (activeLink) {
+                activeLink.classList.add('active');
+            }
+            
+            // Update progress bar
+            const pageIndex = pages.indexOf(pageId);
+            const progress = ((pageIndex + 1) / pages.length) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+            
+            // Update current page
+            currentPage = pageId;
+            
+            // Add fade-in animation
+            document.getElementById(pageId).classList.add('fade-in');
+            
+            // Scroll to top
+            window.scrollTo(0, 0);
+        }
+
+        function toggleMobileMenu() {
+            const navLinks = document.getElementById('navLinks');
+            navLinks.classList.toggle('open');
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            showPage('home');
+            
+            // Add smooth scrolling to any remaining anchor links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+
+            // Add keyboard navigation
+            document.addEventListener('keydown', function(e) {
+                const currentIndex = pages.indexOf(currentPage);
+                
+                if (e.key === 'ArrowRight' && currentIndex < pages.length - 1) {
+                    showPage(pages[currentIndex + 1]);
+                } else if (e.key === 'ArrowLeft' && currentIndex > 0) {
+                    showPage(pages[currentIndex - 1]);
+                }
+            });
+
+            // Add particle animation to home page
+            createParticles();
+        });
+
+        // Particle system for background effect
+        function createParticles() {
+            const heroHeader = document.querySelector('.hero-header');
+            if (!heroHeader) return;
+            
+            const particleCount = 30;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.cssText = `
+                    position: absolute;
+                    width: 2px;
+                    height: 2px;
+                    background: rgba(255,255,255,0.4);
+                    border-radius: 50%;
+                    pointer-events: none;
+                    left: ${Math.random() * 100}%;
+                    top: ${Math.random() * 100}%;
+                    animation: float ${3 + Math.random() * 4}s ease-in-out infinite ${Math.random() * 2}s;
+                    z-index: 0;
+                `;
+                heroHeader.appendChild(particle);
+            }
+        }
+
+        // CSS for particle animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes float {
+                0%, 100% { 
+                    transform: translateY(0) rotate(0deg); 
+                    opacity: 0.3; 
+                }
+                50% { 
+                    transform: translateY(-20px) rotate(180deg); 
+                    opacity: 1; 
+                }
+            }
+            
+            .hero-header .particle {
+                z-index: 0;
+            }
+            
+            .hero-title, .hero-subtitle, .hero-cta {
+                position: relative;
+                z-index: 1;
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Add intersection observer for animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        // Enhanced navigation with URL state (optional - for bookmarking)
+        function updateURL(pageId) {
+            if (history.pushState) {
+                history.pushState({page: pageId}, '', `#${pageId}`);
+            }
+        }
+
+        // Handle browser back/forward buttons
+        window.addEventListener('popstate', function(e) {
+            if (e.state && e.state.page) {
+                showPage(e.state.page);
+            } else {
+                const hash = window.location.hash.substr(1);
+                if (pages.includes(hash)) {
+                    showPage(hash);
+                } else {
+                    showPage('home');
+                }
+            }
+        });
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(e) {
+            const navLinks = document.getElementById('navLinks');
+            const mobileToggle = document.querySelector('.mobile-menu-toggle');
+            
+            if (!navLinks.contains(e.target) && !mobileToggle.contains(e.target)) {
+                navLinks.classList.remove('open');
+            }
+        });
+
+        // Add reading progress for each page
+        window.addEventListener('scroll', function() {
+            const activeSection = document.querySelector('.page-section.active');
+            if (!activeSection) return;
+            
+            const scrollTop = window.pageYOffset;
+            const docHeight = activeSection.offsetHeight;
+            const winHeight = window.innerHeight;
+            const scrollPercent = scrollTop / (docHeight - winHeight);
+            const scrollPercentRounded = Math.round(scrollPercent * 100);
+            
+            // Update progress for current page only
+            if (scrollPercentRounded >= 0 && scrollPercentRounded <= 100) {
+                const baseProgress = (pages.indexOf(currentPage) / pages.length) * 100;
+                const pageProgress = (scrollPercentRounded / 100) * (100 / pages.length);
+                document.getElementById('progressBar').style.width = (baseProgress + pageProgress) + '%';
+            }
+        });
+
+        // Add smooth transitions between pages
+        function enhancedShowPage(pageId) {
+            const currentSection = document.querySelector('.page-section.active');
+            const targetSection = document.getElementById(pageId);
+            
+            if (currentSection === targetSection) return;
+            
+            // Fade out current page
+            if (currentSection) {
+                currentSection.style.opacity = '0';
+                currentSection.style.transform = 'translateX(-20px)';
+            }
+            
+            setTimeout(() => {
+                showPage(pageId);
+                
+                // Fade in new page
+                targetSection.style.opacity = '0';
+                targetSection.style.transform = 'translateX(20px)';
+                
+                setTimeout(() => {
+                    targetSection.style.opacity = '1';
+                    targetSection.style.transform = 'translateX(0)';
+                }, 50);
+            }, 200);
+        }
+
+        // Print functionality
+        function printPage() {
+            window.print();
+        }
+
+        // Export functionality (basic)
+        function exportContent() {
+            const content = document.querySelector('.page-section.active').innerHTML;
+            const blob = new Blob([content], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `unavoidable-conclusion-${currentPage}.html`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Enhanced accessibility
+        document.addEventListener('keydown', function(e) {
+            // Tab navigation enhancement
+            if (e.key === 'Tab') {
+                document.body.classList.add('keyboard-navigation');
+            }
+            
+            // Escape to close mobile menu
+            if (e.key === 'Escape') {
+                document.getElementById('navLinks').classList.remove('open');
+            }
+        });
+
+        document.addEventListener('mousedown', function() {
+            document.body.classList.remove('keyboard-navigation');
+        });
+    </script>
+
+    <!-- Academic References Footer -->
+    <footer style="background: var(--bg-tertiary); padding: 3rem 2rem; margin-top: 4rem; border-top: 1px solid var(--gray-dark); text-align: center;">
+        <div style="max-width: 1000px; margin: 0 auto;">
+            <h4 style="color: var(--gold-primary); margin-bottom: 2rem;">Academic Foundation</h4>
+            <div style="columns: 2; column-gap: 3rem; text-align: left; font-size: 0.9rem; color: var(--gray-medium);">
+                <div style="margin-bottom: 1rem;"><strong>Mathematical Foundations:</strong> Collins (2009), Barnes (2019), Penrose (2004), Weinberg (1987)</div>
+                <div style="margin-bottom: 1rem;"><strong>Information Theory:</strong> Shannon (1948), Bennett (1990), Lloyd (2006)</div>
+                <div style="margin-bottom: 1rem;"><strong>Consciousness Studies:</strong> Chalmers (1995), Nagel (2012), Plantinga (2011)</div>
+                <div style="margin-bottom: 1rem;"><strong>Logical Structure:</strong> Aristotle (Metaphysics), Aquinas (Summa), Plantinga (1974)</div>
+                <div style="margin-bottom: 1rem;"><strong>Psychological Resistance:</strong> Festinger (1957), Haidt (2012), Klayman & Ha (1987)</div>
+                <div style="margin-bottom: 1rem;"><strong>Fine-Tuning Evidence:</strong> Carter (1974), Rees (1999), Davies (2007), Lewis & Barnes (2016)</div>
+            </div>
+            <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--gray-dark);">
+                <p style="color: var(--gray-medium); font-size: 0.9rem;">
+                    © 2025 THEOPHYSICS Research Initiative | David Lowe<br>
+                    <em style="color: var(--gold-primary);">"Where Logic Meets the Sacred"</em>
+                </p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

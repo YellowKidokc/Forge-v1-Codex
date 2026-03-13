@@ -1,0 +1,72 @@
+{
+  "nodes": [
+    {
+      "node_id": "11111111-1111-4111-8111-111111111111",
+      "statement": "Something exists rather than nothing.",
+      "scope": "paragraph",
+      "question_type": "what_is_x",
+      "facets": {
+        "entity": { "value": "axiom", "attachments": [] },
+        "role": { "value": "foundation", "attachments": [] },
+        "evidence": { "value": "self-refutation on denial", "attachments": [] },
+        "time": { "value": "Q0", "attachments": [] },
+        "ops": { "value": "canonical", "attachments": [] },
+        "context": { "value": "ontology", "attachments": [] },
+        "provenance": { "value": "manual+dialectic", "attachments": [] }
+      },
+      "death_tests": {
+        "self_refutation": false,
+        "infinite_regress": false,
+        "empirical_contradiction": false,
+        "logical_incoherence": false
+      },
+      "gates": {
+        "structural": 95,
+        "mathematical": 85,
+        "empirical": 70,
+        "cross_domain": 90,
+        "adversarial": 88
+      }
+    },
+    {
+      "node_id": "22222222-2222-4222-8222-222222222222",
+      "statement": "Distinguishability is informational.",
+      "scope": "paragraph",
+      "question_type": "what_grounds_x",
+      "facets": {
+        "entity": { "value": "claim", "attachments": [] },
+        "role": { "value": "derivation", "attachments": [] },
+        "evidence": { "value": "semantic/measurement necessity", "attachments": [] },
+        "time": { "value": "Q2", "attachments": [] },
+        "ops": { "value": "needs_review", "attachments": [] },
+        "context": { "value": "information theory", "attachments": [] },
+        "provenance": { "value": "theophysics tree", "attachments": [] }
+      },
+      "death_tests": {
+        "self_refutation": false,
+        "infinite_regress": false,
+        "empirical_contradiction": false,
+        "logical_incoherence": false
+      },
+      "gates": {
+        "structural": 88,
+        "mathematical": 82,
+        "empirical": 65,
+        "cross_domain": 86,
+        "adversarial": 80
+      }
+    }
+  ],
+  "edges": [
+    {
+      "edge_id": "33333333-3333-4333-8333-333333333333",
+      "from_node_id": "11111111-1111-4111-8111-111111111111",
+      "to_node_id": "22222222-2222-4222-8222-222222222222",
+      "edge_type": "supports",
+      "weight": 0.93,
+      "evidence_status": "verified",
+      "context": "ontological-tree",
+      "provenance": "manual-link"
+    }
+  ]
+}

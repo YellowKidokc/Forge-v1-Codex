@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://theophysics/forge/truth-session.schema.json",
+  "title": "TruthSession",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["session_id", "topic", "created_at", "protocol"],
+  "properties": {
+    "session_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "topic": {
+      "type": "string",
+      "minLength": 1
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "protocol": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "steelman_alternatives",
+        "strongest_objection_presented",
+        "facts_vs_interpretation_split",
+        "claims_sources_logged"
+      ],
+      "properties": {
+        "steelman_alternatives": { "type": "boolean" },
+        "strongest_objection_presented": { "type": "boolean" },
+        "facts_vs_interpretation_split": { "type": "boolean" },
+        "claims_sources_logged": { "type": "boolean" }
+      }
+    },
+    "confidence_before": { "type": "number", "minimum": 0, "maximum": 1 },
+    "confidence_after": { "type": "number", "minimum": 0, "maximum": 1 },
+    "notes": { "type": "string" },
+    "raw_payload": { "type": "object" }
+  }
+}

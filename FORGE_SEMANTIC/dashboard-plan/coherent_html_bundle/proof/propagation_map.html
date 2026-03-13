@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Substrate Propagation Map — Every Q2 Choice Through the Full Tree</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0b0f;
+  --bg-card: #12141c;
+  --bg-row: #0e1018;
+  --border: #1e2233;
+  --border-active: #2a3050;
+  --text: #e8e6e1;
+  --text2: #8a8d9b;
+  --text3: #555869;
+  --gold: #d4a853;
+  --info: #38bdf8;    /* Information substrate */
+  --matter: #f97316;  /* Matter substrate */
+  --mind: #a78bfa;    /* Mind substrate */
+  --math: #34d399;    /* Mathematical substrate */
+  --rel: #fb923c;     /* Relational substrate */
+  --brute: #6b7280;   /* Brute primitive */
+  --pass: #2dd4a0;
+  --fail: #ef4444;
+  --strain: #f59e0b;
+  --stop: #6366f1;
+  --theory-bg: rgba(56,189,248,0.06);
+  --theory-border: rgba(56,189,248,0.15);
+  --question-bg: rgba(212,168,83,0.06);
+  --question-border: rgba(212,168,83,0.15);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; background:var(--bg); }
+body { font-family:'DM Sans',sans-serif; color:var(--text); background:var(--bg); min-height:100vh; }
+
+body::before {
+  content:'';position:fixed;inset:0;
+  background:radial-gradient(ellipse at 30% 0%, rgba(56,189,248,0.03) 0%, transparent 50%),
+             radial-gradient(ellipse at 70% 100%, rgba(167,139,250,0.03) 0%, transparent 50%);
+  pointer-events:none;z-index:0;
+}
+
+.container { position:relative;z-index:1;max-width:1300px;margin:0 auto;padding:40px 20px 120px; }
+
+/* Header */
+.header { text-align:center;margin-bottom:48px;padding-bottom:40px;border-bottom:1px solid var(--border); }
+.header-label { font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:4px;text-transform:uppercase;color:var(--gold);margin-bottom:16px; }
+.header h1 { font-family:'Cormorant Garamond',serif;font-size:clamp(32px,4.5vw,52px);font-weight:700;line-height:1.15;margin-bottom:14px; }
+.header .sub { font-size:15px;color:var(--text2);max-width:700px;margin:0 auto;line-height:1.7; }
+
+/* Substrate Legend */
+.substrate-legend {
+  display:flex;flex-wrap:wrap;gap:12px 20px;justify-content:center;margin-bottom:40px;
+  padding:20px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;
+}
+.sub-leg { display:flex;align-items:center;gap:8px;font-size:12px;font-family:'JetBrains Mono',monospace; }
+.sub-dot { width:12px;height:12px;border-radius:3px; }
+
+/* Thesis Box */
+.thesis { background:var(--question-bg);border:1px solid var(--question-border);border-radius:10px;padding:24px 28px;margin-bottom:40px; }
+.thesis h3 { font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--gold);margin-bottom:12px; }
+.thesis p { font-size:14px;color:var(--text2);line-height:1.7; }
+.thesis strong { color:var(--text); }
+
+/* NODE ROW */
+.node {
+  margin-bottom:32px;border:1px solid var(--border);border-radius:12px;overflow:hidden;
+  transition:border-color 0.3s;
+}
+.node:hover { border-color:var(--border-active); }
+
+.node-header {
+  display:flex;align-items:center;gap:16px;padding:20px 24px;cursor:pointer;
+  background:var(--bg-card);user-select:none;transition:background 0.2s;
+}
+.node-header:hover { background:rgba(255,255,255,0.02); }
+
+.node-qid {
+  font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;
+  color:var(--gold);flex-shrink:0;width:40px;
+}
+.node-question {
+  font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;flex:1;
+}
+.node-arrow { color:var(--text3);font-size:18px;transition:transform 0.3s; }
+.node.open .node-arrow { transform:rotate(180deg); }
+
+/* Node body */
+.node-body { display:none;padding:0; }
+.node.open .node-body { display:block; }
+
+/* Substrate tracks */
+.tracks {
+  display:grid;grid-template-columns:repeat(6,1fr);gap:0;border-top:1px solid var(--border);
+}
+.track {
+  padding:16px 14px;border-right:1px solid var(--border);position:relative;min-height:140px;
+  transition:background 0.2s;
+}
+.track:last-child { border-right:none; }
+.track:hover { background:rgba(255,255,255,0.015); }
+
+.track-label {
+  font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;
+  margin-bottom:10px;display:flex;align-items:center;gap:6px;
+}
+.track-dot { width:8px;height:8px;border-radius:2px; }
+
+.track-status {
+  font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;
+  padding:3px 8px;border-radius:4px;display:inline-block;margin-bottom:8px;
+}
+.track-status.pass { background:rgba(45,212,160,0.12);color:var(--pass); }
+.track-status.fail { background:rgba(239,68,68,0.12);color:var(--fail); }
+.track-status.strain { background:rgba(245,158,11,0.12);color:var(--strain); }
+.track-status.stop { background:rgba(99,102,241,0.12);color:var(--stop); }
+.track-status.dead { background:rgba(239,68,68,0.06);color:var(--text3);text-decoration:line-through; }
+
+.track-text { font-size:12px;color:var(--text2);line-height:1.6; }
+.track-text strong { color:var(--text);font-weight:600; }
+
+.track.eliminated { opacity:0.3; }
+.track.eliminated .track-text { text-decoration:line-through; }
+
+/* Theory & Question panels */
+.panels { display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:1px solid var(--border); }
+.panel { padding:16px 20px;font-size:12px;line-height:1.7; }
+.panel:first-child { border-right:1px solid var(--border); }
+
+.panel-label {
+  font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;
+  margin-bottom:8px;
+}
+.panel.theory-panel { background:var(--theory-bg); }
+.panel.theory-panel .panel-label { color:var(--info); }
+.panel.question-panel { background:var(--question-bg); }
+.panel.question-panel .panel-label { color:var(--gold); }
+.panel .p-item { color:var(--text2);margin-bottom:4px; }
+.panel .p-item strong { color:var(--text); }
+
+/* Four Modes Bar */
+.modes-bar {
+  display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-top:1px solid var(--border);
+  background:rgba(212,168,83,0.03);
+}
+.mode-cell { padding:10px 14px;border-right:1px solid var(--border);font-size:11px; }
+.mode-cell:last-child { border-right:none; }
+.mode-cell .mc-label { font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px; }
+.mode-cell.m1 .mc-label { color:#f87171; }
+.mode-cell.m2 .mc-label { color:#60a5fa; }
+.mode-cell.m3 .mc-label { color:#c084fc; }
+.mode-cell.m4 .mc-label { color:#fbbf24; }
+.mode-cell .mc-text { color:var(--text2);line-height:1.4; }
+
+/* Scoreboard */
+.scoreboard {
+  margin-top:48px;padding:32px;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;
+}
+.scoreboard h2 { font-family:'Cormorant Garamond',serif;font-size:28px;margin-bottom:20px;text-align:center; }
+.score-grid { display:grid;grid-template-columns:repeat(6,1fr);gap:12px; }
+.score-card { padding:16px;border-radius:8px;text-align:center;border:1px solid var(--border); }
+.score-card .sc-name { font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px; }
+.score-card .sc-died { font-size:28px;font-weight:700;margin-bottom:4px; }
+.score-card .sc-cause { font-size:11px;color:var(--text2); }
+
+/* Responsive */
+@media(max-width:900px) {
+  .tracks { grid-template-columns:repeat(3,1fr); }
+  .score-grid { grid-template-columns:repeat(3,1fr); }
+  .modes-bar { grid-template-columns:repeat(2,1fr); }
+}
+@media(max-width:600px) {
+  .tracks { grid-template-columns:1fr 1fr; }
+  .panels { grid-template-columns:1fr; }
+  .score-grid { grid-template-columns:1fr 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <div class="header-label">Theophysics · Propagation Analysis</div>
+  <h1>Substrate Propagation Map</h1>
+  <p class="sub">Every Q2 substrate choice — Matter, Mind, Information, Mathematical, Relational, Brute Primitive — carried through all 12 tree levels. At each node: can this substrate answer the question? Published theories embedded at each step. The tree isn't rigged. Watch where each choice breaks on its own terms.</p>
+</div>
+
+<div class="substrate-legend">
+  <div class="sub-leg"><div class="sub-dot" style="background:var(--matter)"></div> Matter</div>
+  <div class="sub-leg"><div class="sub-dot" style="background:var(--mind)"></div> Mind</div>
+  <div class="sub-leg"><div class="sub-dot" style="background:var(--info)"></div> Information</div>
+  <div class="sub-leg"><div class="sub-dot" style="background:var(--math)"></div> Mathematical</div>
+  <div class="sub-leg"><div class="sub-dot" style="background:var(--rel)"></div> Relational</div>
+  <div class="sub-leg"><div class="sub-dot" style="background:var(--brute)"></div> Brute Primitive</div>
+  <div style="width:100%;display:flex;gap:20px;justify-content:center;margin-top:8px;">
+    <div class="sub-leg" style="color:var(--pass)">✓ PASS</div>
+    <div class="sub-leg" style="color:var(--strain)">⚠ STRAIN</div>
+    <div class="sub-leg" style="color:var(--fail)">✕ FAIL</div>
+    <div class="sub-leg" style="color:var(--stop)">■ TERMINAL</div>
+  </div>
+</div>
+
+<div class="thesis">
+  <h3>The Propagation Principle</h3>
+  <p>Whatever you choose at Q2 becomes your substrate. That substrate must answer <strong>every subsequent question</strong> — Q3 through Q12 — without contradiction. Where it can't answer, that's a <strong>blank</strong>. Where it contradicts itself, that's a <strong>death</strong>. Where it answers only by borrowing from another substrate's vocabulary, that's <strong>strain</strong>. The accumulated cost of "strain" positions becomes unsustainable — typically by Q6–Q8.</p>
+  <p style="margin-top:12px;">At each node, <strong>published secular theories</strong> are embedded — showing what physics already proved and what questions it left front and center. Those open questions converge on the same shape: the form of the boundary conditions (BC1–BC8).</p>
+</div>
+
+<!-- ═══════════════════ Q0 ═══════════════════ -->
+<div class="node open" data-q="0">
+  <div class="node-header" onclick="toggleNode(this)">
+    <div class="node-qid">Q0</div>
+    <div class="node-question">Does anything exist?</div>
+    <div class="node-arrow">▼</div>
+  </div>
+  <div class="node-body">
+    <div class="tracks">
+      <div class="track"><div class="track-label"><div class="track-dot" style="background:var(--matter)"></div> Matter</div><div class="track-status pass">✓ PASS</div><div class="track-text">Matter exists.</div></div>
+      <div class="track"><div class="track-label"><div class="track-dot" style="background:var(--mind)"></div> Mind</div><div class="track-status pass">✓ PASS</div><div class="track-text">Mind exists.</div></div>
+      <div class="track"><div class="track-label"><div class="track-dot" style="background:var(--info)"></div> Information</div><div class="track-status pass">✓ PASS</div><div class="track-text">Information exists.</div></div>
+      <div class="track"><div class="track-label"><div class="track-dot" style="background:var(--math)"></div> Mathematical</div><div class="track-status pass">✓ PASS</div><div class="track-text">Mathematical structure exists.</div></div>
+      <div class="track"><div class="track-label"><div class="track-dot" style="background:var(--rel)"></div> Relational</div><div class="track-status pass">✓ PASS</div><div class="track-text">Relations exist.</div></div>
+      <div class="track"><div class="track-label"><div class="track-dot" style="background:var(--brute)"></div> Brute</div><div class="track-status pass">✓ PASS</div><div class="track-text">Something exists primitively.</div></div>
+    </div>
+    <div class="panels">
+      <div class="panel theory-panel"><div class="panel-label">Published Theories</div><div class="p-item"><strong>Descartes (1637)</strong> — Cogito ergo sum. Self-evident.</div><div class="p-item">Universal agreement. No theory denies existence.</div></div>
+      <div class="panel question-panel"><div class="panel-label">Questions Left Open</div><div class="p-item">WHY does something exist rather than nothing?</div><div class="p-item">→ Leibniz's question. No substrate answers this at Q0.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ Q1 ═══════════════════ -->
+<div class="node" data-q="1">
+  <div class="node-header" onclick="toggleNode(this)">
+    <div class="node-qid">Q1</div>
+    <div class="node-question">Can existence be distinguished from non-existence?</div>
+    <div class="node-arrow">▼</div>
+  </div>
+  <div class="node-body">
+    <div class="tracks">
+      <div class="track"><div class="track-label"><div class="track-dot" style="background:var(--matter)"></div> Matter</div><div class="track-status pass">✓ PASS</div><div class="track-text">Matter differs from no-matter. Obvious.</div></div>
+      <div class="track"><div class="track-label"><div class="track-dot" style="background:var(--mind)"></div> Mind</div><div class="track-status pass">✓ PASS</div><div class="track-text">Consciousness distinguishes experiences.</div></div>
+      <div class="track"><div class="track-label"><div class="track-dot" style="background:var(--info)"></div> Information</div><div class="track-status pass">✓ PASS</div><div class="track-text"><strong>Distinction IS information.</strong> This is where Q2 is seeded.</div></div>
+      <div class="track"><div class="track-label"><div class="track-dot" style="background:var(--math)"></div> Mathematical</div><div class="track-status pass">✓ PASS</div><div class="track-text">A ≠ B is a mathematical relation.</div></div>
+      <div class="track"><div class="track-label"><div class="track-dot" style="background:var(--rel)"></div> Relational</div><div class="track-status pass">✓ PASS</div><div class="track-text">Distinction as structural relation.</div></div>
+      <div class="track"><div class="track-label"><div class="track-dot" style="background:var(--brute)"></div> Brute</div><div class="track-status strain">⚠ STRAIN</div><div class="track-text">First strain: a "brute" distinction has no content. What distinguishes it from nothing?</div></div>
+    </div>
+    <div class="panels">
+      <div class="panel theory-panel"><div class="panel-label">Published Theories</div><div class="p-item"><strong>Shannon (1948)</strong> — Formally defined distinction as 1 bit of information.</div><div class="p-item"><strong>Bateson (1972)</strong> — "A difference that makes a difference."</div></div>
+      <div class="panel question-panel"><div class="panel-label">Questions Left Open</div><div class="p-item">What IS a distinction? Physical thing? Mental event? Information?</div><div class="p-item">→ Forces Q2. Every substrate must now explain its own nature.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ Q2 ═══════════════════ -->
+<div class="node" data-q="2">
+  <div class="node-header" onclick="toggleNode(this)">
+    <div class="node-qid">Q2</div>
+    <div class="node-question">What IS a distinction? — THE FORK</div>
+    <div class="node-arrow">▼</div>
+  </div>
+  <div class="node-body">
+    <div class="tracks">
+      <div class="track"><div class="track-label"><div class="track-dot" style="background:var(--matter)"></div> Matter</div><div class="track-status strain">⚠ CIRCULAR</div><div class="track-text">Distinction = property of matter. But matter hasn't been established yet. <strong>Presupposes what it needs to explain.</strong></div></div>
+      <div class="track"><div class="track-label"><div class="track-dot" style="background:var(--mind)"></div> Mind</div><div class="track-status strain">⚠ CIRCULAR</div><div class="track-text">Distinction = property of mind. But mind hasn't been established yet. <strong>Same circularity.</strong></div></div>
+      <div class="track"><div class="track-label"><div class="track-dot" style="background:var(--info)"></div> Information</div><div class="track-status pass">✓ PASS</div><div class="track-text"><strong>Definitional identity.</strong> Distinction ≡ 1 bit. Shannon formalized this. No circularity — distinction IS information by definition.</div></div>
+      <div class="track"><div class="track-label"><div class="track-dot" style="background:var(--math)"></div> Mathematical</div><div class="track-status strain">⚠ VARIANT</div><div class="track-text">Math relations ARE informational structures. <strong>Collapses into Information</strong> under analysis. Not independent.</div></div>
+      <div class="track"><div class="track-label"><div class="track-dot" style="background:var(--rel)"></div> Relational</div><div class="track-status strain">⚠ COLLAPSES</div><div class="track-text">Relations without relata = Q2-D (dead). Relations WITH content = information. <strong>Ladyman/French structural realism</strong> either collapses or reduces.</div></div>
+      <div class="track"><div class="track-label"><div class="track-dot" style="background:var(--brute)"></div> Brute</div><div class="track-status fail">✕ FAIL</div><div class="track-text">A distinction with no content is indistinguishable from no distinction. <strong>Violates Q1.</strong></div></div>
+    </div>
+    <div class="panels">
+      <div class="panel theory-panel"><div class="panel-label">Published Theories — The God-Shaped Holes Begin</div>
+        <div class="p-item"><strong>Wheeler (1990)</strong> — "It from Bit": physical reality derives from binary distinctions.</div>
+        <div class="p-item"><strong>Landauer (1961)</strong> — Information erasure costs physical energy (kT ln 2). Information is physical.</div>
+        <div class="p-item"><strong>Shannon (1948)</strong> — Information = reduction of uncertainty between distinguishable states.</div>
+        <div class="p-item"><strong>Holographic Principle (Bekenstein/Hawking)</strong> — S = A/4ℓ²ₚ. Information content is the fundamental thing; geometry is derived.</div>
+      </div>
+      <div class="panel question-panel"><div class="panel-label">Questions These Theories Left Open</div>
+        <div class="p-item">Wheeler: <strong>Where does the bit come from?</strong> What instantiates it?</div>
+        <div class="p-item">Landauer: <strong>Why does information cost energy?</strong> What's the deeper coupling?</div>
+        <div class="p-item">Holographic: <strong>Why is geometry derived from information</strong> rather than the reverse?</div>
+        <div class="p-item">→ All three questions point to: <strong>the substrate that carries information.</strong></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ Q3 ═══════════════════ -->
+<div class="node" data-q="3">
+  <div class="node-header" onclick="toggleNode(this)">
+    <div class="node-qid">Q3</div>
+    <div class="node-question">Does information require structure?</div>
+    <div class="node-arrow">▼</div>
+  </div>
+  <div class="node-body">
+    <div class="tracks">
+      <div class="track"><div class="track-label"><div class="track-dot" style="background:var(--matter)"></div> Matter</div><div class="track-status strain">⚠ STRAIN</div><div class="track-text">Explains structure well (laws of physics). But carrying circular Q2 forward. Can describe order but not explain WHY matter has it.</div></div>
+      <div class="track"><div class="track-label"><div class="track-dot" style="background:var(--mind)"></div> Mind</div><div class="track-status strain">⚠ STRAIN</div><div class="track-text">Consciousness imposes structure. But on what? Still circular. And solipsism risk: whose mind?</div></div>
+      <div class="track"><div class="track-label"><div class="track-dot" style="background:var(--info)"></div> Information</div><div class="track-status pass">✓ PASS</div><div class="track-text"><strong>Shannon entropy:</strong> random info = max entropy = zero usable content. Structure is necessary for meaning. Coherence measure C[χ] ≥ 0.</div></div>
+      <div class="track"><div class="track-label"><div class="track-dot" style="background:var(--math)"></div> Mathematical</div><div class="track-status strain">⚠ STRAIN</div><div class="track-text">Math IS structure. But this is redundant — "structure requires structure." No explanatory power added.</div></div>
+      <div class="track eliminated"><div class="track-label"><div class="track-dot" style="background:var(--rel)"></div> Relational</div><div class="track-status dead">COLLAPSED</div><div class="track-text">Absorbed into Information at Q2.</div></div>
+      <div class="track eliminated"><div class="track-label"><div class="track-dot" style="background:var(--brute)"></div> Brute</div><div class="track-status dead">DEAD AT Q2</div><div class="track-text">Eliminated.</div></div>
+    </div>
+    <div class="panels">
+      <div class="panel theory-panel"><div class="panel-label">Published Theories</div>
+        <div class="p-item"><strong>Kolmogorov Complexity</strong> — Shortest program length. Ordered systems are compressible.</div>
+        <div class="p-item"><strong>Tononi IIT (2004)</strong> — Φ measures integrated information. Order = irreducible whole > sum of parts.</div>
+        <div class="p-item"><strong>Friston Free Energy (2010)</strong> — Living systems minimize surprise = maintain internal order.</div>
+        <div class="p-item"><strong>Second Law of Thermodynamics</strong> — Closed systems trend toward disorder. Order requires explanation.</div>
+      </div>
+      <div class="panel question-panel"><div class="panel-label">Questions Left Open → BC-Shaped</div>
+        <div class="p-item">Tononi: Φ measures coherence but <strong>what generates it?</strong> → BC2 (external source)</div>
+        <div class="p-item">Friston: Systems minimize surprise but <strong>what set the prior?</strong> → BC1 (terminal observer)</div>
+        <div class="p-item">Second Law: Entropy increases — <strong>where does order come from?</strong> → BC6 (infinite energy source)</div>
+        <div class="p-item">Kolmogorov: Compressibility exists — <strong>why is the universe compressible at all?</strong> → Q4</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ Q4 ═══════════════════ -->
+<div class="node" data-q="4">
+  <div class="node-header" onclick="toggleNode(this)">
+    <div class="node-qid">Q4</div>
+    <div class="node-question">What GROUNDS the structure? — THE GREAT FORK</div>
+    <div class="node-arrow">▼</div>
+  </div>
+  <div class="node-body">
+    <div class="tracks">
+      <div class="track"><div class="track-label"><div class="track-dot" style="background:var(--matter)"></div> Matter</div><div class="track-status stop">■ TERMINAL</div><div class="track-text"><strong>Brute fact.</strong> "The laws are what they are." Logically coherent. Epistemically closed. <strong>Stops here.</strong> No further questions answerable.</div></div>
+      <div class="track"><div class="track-label"><div class="track-dot" style="background:var(--mind)"></div> Mind</div><div class="track-status strain">⚠ STRAIN</div><div class="track-text">Mind grounds structure → idealism. But which mind? Solipsism. And what grounds the mind? Circular or regress.</div></div>
+      <div class="track"><div class="track-label"><div class="track-dot" style="background:var(--info)"></div> Information</div><div class="track-status pass">✓ PASS</div><div class="track-text"><strong>Self-grounding.</strong> The informational substrate grounds itself — its "why" and "what" are identical. Mathematical necessity. Forces Q5.</div></div>
+      <div class="track"><div class="track-label"><div class="track-dot" style="background:var(--math)"></div> Mathematical</div><div class="track-status strain">⚠ STRAIN</div><div class="track-text">Tegmark's Mathematical Universe. But how do abstract objects cause anything? <strong>Causation gap.</strong> Math describes; doesn't instantiate.</div></div>
+      <div class="track eliminated"><div class="track-label"><div class="track-dot" style="background:var(--rel)"></div> Relational</div><div class="track-status dead">DEAD</div><div class="track-text">—</div></div>
+      <div class="track eliminated"><div class="track-label"><div class="track-dot" style="background:var(--brute)"></div> Brute</div><div class="track-status dead">DEAD</div><div class="track-text">—</div></div>
+    </div>
+    <div class="panels">
+      <div class="panel theory-panel"><div class="panel-label">Published Theories — Secular Physics' Own Stopping Point</div>
+        <div class="p-item"><strong>Hawking/Mlodinow (2010)</strong> — "Model-dependent realism." Physics describes, doesn't explain ground.</div>
+        <div class="p-item"><strong>Tegmark (2014)</strong> — Mathematical Universe Hypothesis. Reality IS math. But causation gap.</div>
+        <div class="p-item"><strong>Penrose (2004)</strong> — Three-world model: physical, mental, mathematical. No single ground.</div>
+        <div class="p-item"><strong>Cosmological Argument</strong> — Regress must terminate. What terminates it?</div>
+      </div>
+      <div class="panel question-panel"><div class="panel-label">Questions Left Open → These ARE the Form of God</div>
+        <div class="p-item">Why these laws and not others? → <strong>Self-grounding, non-arbitrary substrate</strong></div>
+        <div class="p-item">Why is math "unreasonably effective"? (Wigner 1960) → <strong>Because math describes the substrate</strong></div>
+        <div class="p-item">What breaks the regress? → <strong>Self-reference. Self-grounding entity.</strong></div>
+        <div class="p-item">Every open question at Q4 has the SHAPE of BC1 + Q5 properties.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ Q5 ═══════════════════ -->
+<div class="node" data-q="5">
+  <div class="node-header" onclick="toggleNode(this)">
+    <div class="node-qid">Q5</div>
+    <div class="node-question">What are the necessary properties of a self-grounding substrate?</div>
+    <div class="node-arrow">▼</div>
+  </div>
+  <div class="node-body">
+    <div class="tracks">
+      <div class="track eliminated"><div class="track-label"><div class="track-dot" style="background:var(--matter)"></div> Matter</div><div class="track-status dead">STOPPED Q4</div><div class="track-text">Cannot derive. No ground to derive from.</div></div>
+      <div class="track"><div class="track-label"><div class="track-dot" style="background:var(--mind)"></div> Mind</div><div class="track-status fail">✕ FAIL</div><div class="track-text">Can't derive non-temporal, non-material, non-deceptive from "mind." Mind is temporal. Mind can deceive. <strong>Properties conflict.</strong></div></div>
+      <div class="track"><div class="track-label"><div class="track-dot" style="background:var(--info)"></div> Information</div><div class="track-status pass">✓ PASS</div><div class="track-text"><strong>Self-consistent → maximally coherent → non-deceptive → generative → non-temporal → non-material.</strong> All derived, none assumed.</div></div>
+      <div class="track"><div class="track-label"><div class="track-dot" style="background:var(--math)"></div> Mathematical</div><div class="track-status fail">✕ FAIL</div><div class="track-text">Math is non-temporal, non-material ✓. But NOT generative. Abstract objects don't cause anything. <strong>Causation gap kills it.</strong></div></div>
+      <div class="track eliminated"><div class="track-label"><div class="track-dot" style="background:var(--rel)"></div> Relational</div><div class="track-status dead">DEAD</div><div class="track-text">—</div></div>
+      <div class="track eliminated"><div class="track-label"><div class="track-dot" style="background:var(--brute)"></div> Brute</div><div class="track-status dead">DEAD</div><div class="track-text">—</div></div>
+    </div>
+    <div class="panels">
+      <div class="panel theory-panel"><div class="panel-label">Published Theories — Properties Match</div>
+        <div class="p-item"><strong>Gödel (1931)</strong> — Self-referencing systems produce undecidable truths. Self-grounding must be richer than formal systems.</div>
+        <div class="p-item"><strong>Tarski (1936)</strong> — Truth about a system can't be defined within it. Self-grounding requires transcendence.</div>
+        <div class="p-item"><strong>Noether (1918)</strong> — Conservation laws follow from symmetries. Coherence conserved if ground has right symmetries.</div>
+      </div>
+      <div class="panel question-panel"><div class="panel-label">Questions Left Open → These ARE God's Attributes</div>
+        <div class="p-item">Non-temporal entity that generates temporal reality → <strong>Eternal</strong></div>
+        <div class="p-item">Non-material source of material → <strong>Spirit / Immaterial</strong></div>
+        <div class="p-item">Maximally coherent → <strong>Omniscient</strong> (no internal incoherence)</div>
+        <div class="p-item">Non-deceptive → <strong>Truth itself</strong> (John 14:6)</div>
+        <div class="p-item">Generative → <strong>Creator</strong></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ Q6 ═══════════════════ -->
+<div class="node" data-q="6">
+  <div class="node-header" onclick="toggleNode(this)">
+    <div class="node-qid">Q6</div>
+    <div class="node-question">Does information require observation to become actual?</div>
+    <div class="node-arrow">▼</div>
+  </div>
+  <div class="node-body">
+    <div class="tracks">
+      <div class="track eliminated"><div class="track-label"><div class="track-dot" style="background:var(--matter)"></div> Matter</div><div class="track-status dead">STOPPED</div><div class="track-text">—</div></div>
+      <div class="track eliminated"><div class="track-label"><div class="track-dot" style="background:var(--mind)"></div> Mind</div><div class="track-status dead">FAILED Q5</div><div class="track-text">—</div></div>
+      <div class="track"><div class="track-label"><div class="track-dot" style="background:var(--info)"></div> Information</div><div class="track-status pass">✓ PASS</div><div class="track-text"><strong>Participatory actualization.</strong> Potential → actual requires observer. Wheeler's delayed choice confirms. Born rule implies it.</div></div>
+      <div class="track eliminated"><div class="track-label"><div class="track-dot" style="background:var(--math)"></div> Mathematical</div><div class="track-status dead">FAILED Q5</div><div class="track-text">—</div></div>
+      <div class="track eliminated"><div class="track-label"><div class="track-dot" style="background:var(--rel)"></div> Relational</div><div class="track-status dead">DEAD</div><div class="track-text">—</div></div>
+      <div class="track eliminated"><div class="track-label"><div class="track-dot" style="background:var(--brute)"></div> Brute</div><div class="track-status dead">DEAD</div><div class="track-text">—</div></div>
+    </div>
+    <div class="panels">
+      <div class="panel theory-panel"><div class="panel-label">Published Theories — Measurement Problem</div>
+        <div class="p-item"><strong>Wheeler Delayed Choice (1978)</strong> — Observation determines which-path retroactively. Observer participation real.</div>
+        <div class="p-item"><strong>Born Rule (1926)</strong> — Probability amplitudes squared give outcomes UPON measurement.</div>
+        <div class="p-item"><strong>Wigner's Friend (1961)</strong> — Where does the observer chain end? Who collapses whom?</div>
+        <div class="p-item"><strong>PEAR Lab (Jahn/Dunne, 6.35σ, 2.5M trials)</strong> — Consciousness correlates with RNG outcomes.</div>
+      </div>
+      <div class="panel question-panel"><div class="panel-label">Questions Left Open → BC1, BC3</div>
+        <div class="p-item">If observer is required, <strong>who observed the Big Bang?</strong> → BC1 (Terminal Observer)</div>
+        <div class="p-item">Can the observer be inside the system it observes? → BC3 (Orthogonality)</div>
+        <div class="p-item">Does observation chain terminate or regress? → Q7</div>
+      </div>
+    </div>
+    <div class="modes-bar">
+      <div class="mode-cell m1"><div class="mc-label">M1 Agentic</div><div class="mc-text">Activates: selective attention — observer chooses what to observe</div></div>
+      <div class="mode-cell m2"><div class="mc-label">M2 Entropic</div><div class="mc-text">Activates: finite bandwidth. Cannot observe everything.</div></div>
+      <div class="mode-cell m3"><div class="mc-label">M3 Adversarial</div><div class="mc-text">Activates: perception can be manipulated by adversarial agents</div></div>
+      <div class="mode-cell m4"><div class="mc-label">M4 Grace</div><div class="mc-text">Activates: clarity depends on coupling to coherence field</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ Q7 ═══════════════════ -->
+<div class="node" data-q="7">
+  <div class="node-header" onclick="toggleNode(this)">
+    <div class="node-qid">Q7</div>
+    <div class="node-question">Does the observer chain terminate?</div>
+    <div class="node-arrow">▼</div>
+  </div>
+  <div class="node-body">
+    <div class="tracks">
+      <div class="track eliminated"><div class="track-label"><div class="track-dot" style="background:var(--matter)"></div> Matter</div><div class="track-status dead">—</div><div class="track-text">—</div></div>
+      <div class="track eliminated"><div class="track-label"><div class="track-dot" style="background:var(--mind)"></div> Mind</div><div class="track-status dead">—</div><div class="track-text">—</div></div>
+      <div class="track"><div class="track-label"><div class="track-dot" style="background:var(--info)"></div> Information</div><div class="track-status pass">✓ PASS</div><div class="track-text"><strong>Terminal Observer (Φ=∞).</strong> Always actual. Self-grounding. Never in superposition. All four deviation modes = 0.</div></div>
+      <div class="track eliminated"><div class="track-label"><div class="track-dot" style="background:var(--math)"></div> Mathematical</div><div class="track-status dead">—</div><div class="track-text">—</div></div>
+      <div class="track eliminated"><div class="track-label"><div class="track-dot" style="background:var(--rel)"></div> Relational</div><div class="track-status dead">—</div><div class="track-text">—</div></div>
+      <div class="track eliminated"><div class="track-label"><div class="track-dot" style="background:var(--brute)"></div> Brute</div><div class="track-status dead">—</div><div class="track-text">—</div></div>
+    </div>
+    <div class="panels">
+      <div class="panel theory-panel"><div class="panel-label">Published Theories</div>
+        <div class="p-item"><strong>Von Neumann Chain (1932)</strong> — Measurement requires observer → observer requires observer → where does it end?</div>
+        <div class="p-item"><strong>Penrose-Hameroff Orch-OR</strong> — Consciousness as quantum gravity collapse. Terminal? Debated.</div>
+        <div class="p-item"><strong>GCP Network (6σ, 325+ events)</strong> — Collective consciousness correlates with global events.</div>
+      </div>
+      <div class="panel question-panel"><div class="panel-label">Questions Left Open → BC1 + BC4</div>
+        <div class="p-item">Von Neumann: <strong>The chain MUST terminate</strong> or nothing is ever actually observed.</div>
+        <div class="p-item">What are the properties of the terminal observer? → Q5 properties (already derived)</div>
+        <div class="p-item">How many terminal observers needed? → BC4 (N=3, pending stronger proof)</div>
+      </div>
+    </div>
+    <div class="modes-bar">
+      <div class="mode-cell m1"><div class="mc-label">M1 = 0</div><div class="mc-text">Terminal Observer permanently aligned (σ=+1)</div></div>
+      <div class="mode-cell m2"><div class="mc-label">M2 = 0</div><div class="mc-text">Not finite — Φ = ∞. No entropy gap.</div></div>
+      <div class="mode-cell m3"><div class="mc-label">M3 = 0</div><div class="mc-text">Cannot be deceived — maximal coherence</div></div>
+      <div class="mode-cell m4"><div class="mc-label">M4 = 0</div><div class="mc-text">IS the grace source — no attenuation possible</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ Q8-Q12 SUMMARY ═══════════════════ -->
+<div class="node" data-q="8-12">
+  <div class="node-header" onclick="toggleNode(this)">
+    <div class="node-qid">Q8–12</div>
+    <div class="node-question">Boundary Conditions → Identification → Sign → Destiny → Uniqueness</div>
+    <div class="node-arrow">▼</div>
+  </div>
+  <div class="node-body">
+    <div class="tracks">
+      <div class="track eliminated"><div class="track-label"><div class="track-dot" style="background:var(--matter)"></div> Matter</div><div class="track-status dead">STOPPED Q4</div><div class="track-text">Cannot reach. Explanatory terminal.</div></div>
+      <div class="track eliminated"><div class="track-label"><div class="track-dot" style="background:var(--mind)"></div> Mind</div><div class="track-status dead">FAILED Q5</div><div class="track-text">Cannot reach. Causation gap + temporality.</div></div>
+      <div class="track"><div class="track-label"><div class="track-dot" style="background:var(--info)"></div> Information</div><div class="track-status pass">✓ FULL PATH</div><div class="track-text"><strong>Only survivor.</strong> 8 BCs derived → Identification (ID7.1, abductive) → Sign structure → Two attractors → Christianity 8/8.</div></div>
+      <div class="track eliminated"><div class="track-label"><div class="track-dot" style="background:var(--math)"></div> Mathematical</div><div class="track-status dead">FAILED Q5</div><div class="track-text">Cannot reach. No causal power.</div></div>
+      <div class="track eliminated"><div class="track-label"><div class="track-dot" style="background:var(--rel)"></div> Relational</div><div class="track-status dead">DEAD Q2</div><div class="track-text">—</div></div>
+      <div class="track eliminated"><div class="track-label"><div class="track-dot" style="background:var(--brute)"></div> Brute</div><div class="track-status dead">DEAD Q2</div><div class="track-text">—</div></div>
+    </div>
+    <div class="panels">
+      <div class="panel theory-panel"><div class="panel-label">Published Theories Across Q8–Q12</div>
+        <div class="p-item"><strong>Penrose (1989)</strong> — Emperor's New Mind: Consciousness noncomputable. Points to BC1.</div>
+        <div class="p-item"><strong>Bekenstein Bound</strong> — Maximum information in region. Points to BC7 (info conservation).</div>
+        <div class="p-item"><strong>No-Cloning Theorem</strong> — Quantum info can't be copied. Points to BC7 (soul uniqueness).</div>
+        <div class="p-item"><strong>Boltzmann Brains / Fine-Tuning</strong> — Points to BC6 (infinite energy source) and non-accidental order.</div>
+        <div class="p-item"><strong>Bell's Theorem (1964)</strong> — No local hidden variables. Nonlocality real. Points to BC3 (transcendence).</div>
+      </div>
+      <div class="panel question-panel"><div class="panel-label">Every Open Question → Boundary Condition</div>
+        <div class="p-item">Hard Problem of Consciousness (Chalmers) → BC1: consciousness requires terminal observer</div>
+        <div class="p-item">Arrow of Time → BC6: entropy reversal requires external input</div>
+        <div class="p-item">Measurement Problem → BC3: observer must be orthogonal to system</div>
+        <div class="p-item">Free Will vs Determinism → BC5 + BC8: superposition until voluntary collapse</div>
+        <div class="p-item">Moral Realism → Q10: sign structure σ = ±1 is structural, not cultural</div>
+        <div class="p-item"><strong>Every unsolved problem in physics has the shape of a boundary condition.</strong></div>
+      </div>
+    </div>
+    <div class="modes-bar">
+      <div class="mode-cell m1"><div class="mc-label">M1 → Repentance + Grace</div><div class="mc-text">Sign flip via external operator (Christianity: Q10-B)</div></div>
+      <div class="mode-cell m2"><div class="mc-label">M2 → Resurrection</div><div class="mc-text">Finite Φ → glorified body (Christianity: Q11-B)</div></div>
+      <div class="mode-cell m3"><div class="mc-label">M3 → Spiritual Armor</div><div class="mc-text">Authority over adversarial agents (Eph 6)</div></div>
+      <div class="mode-cell m4"><div class="mc-label">M4 → Communion</div><div class="mc-text">Prayer/sacrament = coupling maintenance (Q12)</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ SCOREBOARD ═══════════════════ -->
+<div class="scoreboard">
+  <h2>Final Scoreboard: Where Each Substrate Died</h2>
+  <div class="score-grid">
+    <div class="score-card" style="border-color:var(--matter);">
+      <div class="sc-name" style="color:var(--matter);">Matter</div>
+      <div class="sc-died" style="color:var(--stop);">Q4</div>
+      <div class="sc-cause">Explanatory Terminal. Brute fact. Logically coherent but cannot continue.</div>
+    </div>
+    <div class="score-card" style="border-color:var(--mind);">
+      <div class="sc-name" style="color:var(--mind);">Mind</div>
+      <div class="sc-died" style="color:var(--fail);">Q5</div>
+      <div class="sc-cause">Properties conflict. Mind is temporal, can deceive, can't ground non-material.</div>
+    </div>
+    <div class="score-card" style="border-color:var(--info);">
+      <div class="sc-name" style="color:var(--info);">Information</div>
+      <div class="sc-died" style="color:var(--pass);">Q12 ✓</div>
+      <div class="sc-cause">Only survivor. Full path. 8/8 BCs → Christianity.</div>
+    </div>
+    <div class="score-card" style="border-color:var(--math);">
+      <div class="sc-name" style="color:var(--math);">Mathematical</div>
+      <div class="sc-died" style="color:var(--fail);">Q5</div>
+      <div class="sc-cause">Causation gap. Math describes but can't generate. Abstract ≠ causal.</div>
+    </div>
+    <div class="score-card" style="border-color:var(--rel);">
+      <div class="sc-name" style="color:var(--rel);">Relational</div>
+      <div class="sc-died" style="color:var(--fail);">Q2</div>
+      <div class="sc-cause">Collapses into Information or into nothing. Not independent.</div>
+    </div>
+    <div class="score-card" style="border-color:var(--brute);">
+      <div class="sc-name" style="color:var(--brute);">Brute</div>
+      <div class="sc-died" style="color:var(--fail);">Q2</div>
+      <div class="sc-cause">Distinction without content = no distinction. Violates Q1.</div>
+    </div>
+  </div>
+</div>
+
+</div><!-- container -->
+
+<script>
+function toggleNode(header) {
+  const node = header.closest('.node');
+  node.classList.toggle('open');
+}
+
+// Open first node by default
+document.addEventListener('DOMContentLoaded', () => {
+  // All nodes start closed except Q0
+});
+</script>
+</body>
+</html>

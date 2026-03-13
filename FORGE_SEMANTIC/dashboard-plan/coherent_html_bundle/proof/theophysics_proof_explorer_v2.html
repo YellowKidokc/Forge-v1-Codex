@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Theophysics Proof Explorer — Canonical v2</title>
+<style>
+:root {
+  --bg:#0a0b0f; --bg2:#12141c; --bg3:#0e1018; --border:#1e2233; --border2:#2a3050;
+  --text:#e8e6e1; --text2:#a2a7b8; --text3:#6d7385; --gold:#d4a853; --phys:#38bdf8;
+  --theo:#a78bfa; --bif:#34d399; --dead:#ef4444; --warn:#f59e0b; --pass:#2dd4a0;
+  --axiom: rgba(212,168,83,.08); --definition: rgba(56,189,248,.08); --derivation: rgba(167,139,250,.08);
+  --equation: rgba(45,212,160,.08); --evidence: rgba(45,212,160,.08); --commitment: rgba(245,158,11,.08);
+}
+*{box-sizing:border-box} html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;scroll-behavior:smooth}
+body::before{content:"";position:fixed;inset:0;background:radial-gradient(circle at 20% 0%, rgba(56,189,248,.04), transparent 35%),radial-gradient(circle at 90% 100%, rgba(167,139,250,.04), transparent 35%);pointer-events:none}
+.shell{position:relative;z-index:1;display:grid;grid-template-columns:320px 1fr;min-height:100vh}
+.sidebar{position:sticky;top:0;height:100vh;overflow:auto;border-right:1px solid var(--border);background:rgba(10,11,15,.88);backdrop-filter: blur(8px);padding:28px 22px 40px}
+.main{padding:30px 34px 80px;max-width:1400px}
+.kicker{font:600 11px ui-monospace, SFMono-Regular, Menlo, monospace;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:14px}
+h1,h2,h3{margin:0} h1{font-family:Georgia, 'Times New Roman', serif;font-size:42px;line-height:1.05;margin-bottom:10px} .sub{color:var(--text2);line-height:1.6;font-size:14px}
+.section{margin-bottom:28px;padding-bottom:24px;border-bottom:1px solid var(--border)}
+.muted{color:var(--text3)}
+.control-group{margin-top:18px}.control-title{font:600 11px ui-monospace, monospace;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:10px}
+button,select{appearance:none;border:1px solid var(--border2);background:var(--bg2);color:var(--text);padding:10px 12px;border-radius:10px;font-size:13px}
+button{cursor:pointer}.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.btn-full{width:100%;margin-top:10px}
+.checks{display:grid;gap:8px}.check{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--text2)}
+.check input{accent-color:var(--gold)}
+.legend{display:grid;gap:9px}.leg{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--text2)}.sw{width:12px;height:12px;border-radius:4px;border:1px solid var(--border2)}
+.header{display:flex;justify-content:space-between;gap:18px;align-items:end;padding-bottom:18px;border-bottom:1px solid var(--border);margin-bottom:24px}
+.header-right{display:flex;gap:10px;flex-wrap:wrap}
+.badge{padding:7px 10px;border:1px solid var(--border);border-radius:999px;font-size:12px;color:var(--text2);background:var(--bg2)}
+.band{border:1px solid var(--border);background:rgba(18,20,28,.74);border-radius:18px;padding:18px 18px 20px;margin-bottom:18px;position:relative;overflow:hidden}
+.band-title{font:600 11px ui-monospace, monospace;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:14px}
+.stack{display:grid;gap:12px;max-width:520px;margin:0 auto}
+.row{display:grid;gap:12px}.row.cols-5{grid-template-columns:repeat(5,minmax(180px,1fr))}.row.cols-4{grid-template-columns:repeat(4,minmax(180px,1fr))}.row.cols-3{grid-template-columns:repeat(3,minmax(180px,1fr))}.row.cols-2{grid-template-columns:repeat(2,minmax(220px,1fr))}
+@media (max-width:1200px){.shell{grid-template-columns:1fr}.sidebar{position:relative;height:auto;border-right:none;border-bottom:1px solid var(--border)}.row.cols-5,.row.cols-4,.row.cols-3{grid-template-columns:repeat(2,minmax(220px,1fr))}}
+@media (max-width:760px){.main{padding:22px}.row.cols-5,.row.cols-4,.row.cols-3,.row.cols-2{grid-template-columns:1fr}h1{font-size:34px}}
+.node{border:1px solid var(--border);background:var(--bg2);border-radius:14px;padding:14px 14px 12px;position:relative;transition:.18s ease;cursor:pointer;box-shadow:0 0 0 rgba(0,0,0,0)}
+.node:hover{transform:translateY(-1px);border-color:var(--border2);box-shadow:0 10px 30px rgba(0,0,0,.18)}
+.node .kind{font:600 10px ui-monospace, monospace;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:6px}
+.node .title{font-weight:650;line-height:1.35;margin-bottom:6px}.node .meta{font-size:12px;color:var(--text3)}
+.node .mini{font-size:12px;color:var(--text2);line-height:1.45;margin-top:7px}
+.node[data-kind='axiom']{background:linear-gradient(180deg,var(--axiom),rgba(18,20,28,.95));border-color:rgba(212,168,83,.28)}
+.node[data-kind='definition']{background:linear-gradient(180deg,var(--definition),rgba(18,20,28,.95));border-color:rgba(56,189,248,.25)}
+.node[data-kind='derivation']{background:linear-gradient(180deg,var(--derivation),rgba(18,20,28,.95));border-color:rgba(167,139,250,.25)}
+.node[data-kind='equation']{background:linear-gradient(180deg,var(--equation),rgba(18,20,28,.95));border-color:rgba(45,212,160,.25)}
+.node[data-kind='evidence']{background:linear-gradient(180deg,rgba(45,212,160,.08),rgba(18,20,28,.95));border-color:rgba(45,212,160,.25)}
+.node[data-kind='commitment']{background:linear-gradient(180deg,var(--commitment),rgba(18,20,28,.95));border-color:rgba(245,158,11,.28)}
+.node[data-status='dead']{box-shadow:inset 0 0 0 1px rgba(239,68,68,.2)}
+.node[data-status='pass']{box-shadow:inset 0 0 0 1px rgba(45,212,160,.2)}
+.node.hidden-layer{display:none}
+.node.trace-dim{opacity:.22;filter:saturate(.65)} .node.trace-hit{opacity:1;outline:2px solid var(--gold);outline-offset:2px}
+.connector{height:22px;display:flex;justify-content:center;align-items:center;color:var(--text3);font:600 12px ui-monospace, monospace;letter-spacing:1px}
+.detail{position:sticky;bottom:18px;margin-top:20px;border:1px solid var(--border2);background:linear-gradient(180deg, rgba(18,20,28,.95), rgba(10,11,15,.96));border-radius:18px;padding:18px 18px 16px;box-shadow:0 18px 40px rgba(0,0,0,.25)}
+.detail .head{display:flex;justify-content:space-between;gap:12px;align-items:start;margin-bottom:10px}.detail .name{font-size:22px;font-family:Georgia,'Times New Roman',serif}.detail .tag{font:600 11px ui-monospace, monospace;letter-spacing:2px;text-transform:uppercase;color:var(--gold)}
+.detail-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}.detail-card{border:1px solid var(--border);background:var(--bg3);border-radius:12px;padding:14px}
+.detail-card h4{margin:0 0 8px 0;font-size:13px;color:var(--text2);text-transform:uppercase;letter-spacing:1.5px;font-family:ui-monospace, monospace}.detail-card p,.detail-card li{font-size:13px;color:var(--text2);line-height:1.6}.detail-card ul{margin:0;padding-left:18px}.eq{font-family:ui-monospace, monospace;color:var(--text);font-size:13px;background:rgba(255,255,255,.03);padding:10px 12px;border-radius:10px;border:1px solid var(--border)}
+.trace-note{margin-top:10px;padding:10px 12px;border-radius:12px;border:1px dashed rgba(212,168,83,.35);background:rgba(212,168,83,.05);font-size:12px;color:var(--text2)}
+.small{font-size:12px;color:var(--text3)}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="kicker">Canonical Explorer</div>
+    <h2 style="font-family:Georgia,serif;font-size:28px;margin-bottom:10px;">Theophysics Proof Explorer</h2>
+    <div class="sub">Measured interaction only: click nodes for proof detail, toggle epistemic layers, and trace alternative starting assumptions through the architecture.</div>
+
+    <div class="section control-group">
+      <div class="control-title">Trace mode</div>
+      <select id="traceSelect" style="width:100%">
+        <option value="">No trace</option>
+        <option value="information">Information primitive</option>
+        <option value="matter">Matter primitive</option>
+        <option value="math">Math primitive</option>
+        <option value="consciousness">Consciousness primitive</option>
+        <option value="emergent">Information emergent</option>
+      </select>
+      <button class="btn-full" id="clearTrace">Reset trace</button>
+      <div class="trace-note">Trace mode highlights consequence chains: assumption → propagation → strain / dead-end → closure outcome.</div>
+    </div>
+
+    <div class="section control-group">
+      <div class="control-title">Visible layers</div>
+      <div class="checks">
+        <label class="check"><input type="checkbox" data-layer-toggle="axiom" checked> Axioms</label>
+        <label class="check"><input type="checkbox" data-layer-toggle="definition" checked> Definitions</label>
+        <label class="check"><input type="checkbox" data-layer-toggle="derivation" checked> Derivations</label>
+        <label class="check"><input type="checkbox" data-layer-toggle="equation" checked> Equations / theorems</label>
+        <label class="check"><input type="checkbox" data-layer-toggle="evidence" checked> Evidence</label>
+        <label class="check"><input type="checkbox" data-layer-toggle="commitment" checked> Framework commitments</label>
+      </div>
+      <div class="btn-row">
+        <button id="showAll">Show all</button>
+        <button id="showCore">Core only</button>
+      </div>
+    </div>
+
+    <div class="section control-group">
+      <div class="control-title">Legend</div>
+      <div class="legend">
+        <div class="leg"><span class="sw" style="background:var(--axiom)"></span> Primitive / axiom</div>
+        <div class="leg"><span class="sw" style="background:var(--definition)"></span> Definition / substrate</div>
+        <div class="leg"><span class="sw" style="background:var(--derivation)"></span> Derivation / dependency</div>
+        <div class="leg"><span class="sw" style="background:var(--equation)"></span> Equation / theorem</div>
+        <div class="leg"><span class="sw" style="background:rgba(45,212,160,.08)"></span> Evidence / pass</div>
+        <div class="leg"><span class="sw" style="background:var(--commitment)"></span> Chosen commitment</div>
+      </div>
+    </div>
+
+    <div class="small">Design language adapted from the structural isomorphism / proof architecture pages; interaction model adapted from the ontological decision tree and propagation map.</div>
+  </aside>
+
+  <main class="main">
+    <div class="header">
+      <div>
+        <div class="kicker">Proof by architecture</div>
+        <h1>Canonical Interactive Proof Map</h1>
+        <div class="sub">A restrained academic explorer: not a flashy demo, but a layered proof surface where assumptions can be inspected, alternative primitives can be traced, and closure conditions can be tested.</div>
+      </div>
+      <div class="header-right">
+        <div class="badge">click = expand proof</div>
+        <div class="badge">toggle = epistemic layer</div>
+        <div class="badge">trace = worldview propagation</div>
+      </div>
+    </div>
+
+    <section class="band" id="foundationBand">
+      <div class="band-title">Foundation spine</div>
+      <div class="stack">
+        <div class="node" data-id="existence" data-kind="axiom" data-traces="information matter math consciousness emergent">
+          <div class="kind">Axiom</div><div class="title">A1.1 — Something exists rather than nothing.</div><div class="meta">Self-refuting to deny.</div>
+        </div>
+        <div class="node" data-id="distinction" data-kind="axiom" data-traces="information matter math consciousness emergent">
+          <div class="kind">Axiom</div><div class="title">A1.2 — Existence requires distinction.</div><div class="meta">Knowability requires differentiability.</div>
+        </div>
+        <div class="node" data-id="primacy" data-kind="axiom" data-traces="information matter math consciousness emergent">
+          <div class="kind">Axiom</div><div class="title">A1.3 — Distinguishability is information; information is primitive.</div><div class="meta">Critical branching point.</div>
+        </div>
+        <div class="node" data-id="substrate" data-kind="definition" data-traces="information">
+          <div class="kind">Definition</div><div class="title">A2.1 / D2.1 — Information requires substrate → Logos field substrate.</div><div class="meta">Self-grounding substrate selected.</div>
+        </div>
+        <div class="node" data-id="selfground" data-kind="commitment" data-traces="information">
+          <div class="kind">Commitment</div><div class="title">A2.2 — Self-grounding chosen.</div><div class="meta">Explicit framework commitment, not disguised derivation.</div>
+        </div>
+        <div class="node" data-id="axioms189" data-kind="derivation" data-traces="information">
+          <div class="kind">Derivation</div><div class="title">189 axioms unfold from substrate, coherence, and closure constraints.</div><div class="meta">The architecture proceeds from this compression base.</div>
+        </div>
+      </div>
+      <div class="connector">▼ alternative primitive branches</div>
+      <div class="row cols-4">
+        <div class="node" data-id="matterAlt" data-kind="derivation" data-status="dead" data-traces="matter">
+          <div class="kind">Alternative</div><div class="title">Matter primitive</div><div class="mini">Dead-end: matter is only describable through informational properties — mass, charge, spin, position.</div>
+        </div>
+        <div class="node" data-id="mathAlt" data-kind="derivation" data-status="dead" data-traces="math">
+          <div class="kind">Alternative</div><div class="title">Mathematics primitive</div><div class="mini">Dead-end: mathematical structure describes relations but does not instantiate a substrate.</div>
+        </div>
+        <div class="node" data-id="mindAlt" data-kind="derivation" data-status="dead" data-traces="consciousness">
+          <div class="kind">Alternative</div><div class="title">Consciousness primitive</div><div class="mini">Dead-end: consciousness still presupposes distinguishable states and a processing substrate.</div>
+        </div>
+        <div class="node" data-id="emergentAlt" data-kind="derivation" data-status="dead" data-traces="emergent">
+          <div class="kind">Alternative</div><div class="title">Information emergent</div><div class="mini">Dead-end: emergence requires a prior structured system, so regress remains open.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="band" id="pairsBand">
+      <div class="band-title">Five paired subsystems</div>
+      <div class="row cols-5">
+        <div class="node" data-id="gravity" data-kind="equation" data-traces="information">
+          <div class="kind">Pair</div><div class="title">(G,R) Gravity / Resurrection</div><div class="mini">Remove G or R → equation does not close.</div>
+        </div>
+        <div class="node" data-id="matterPair" data-kind="equation" data-traces="information matter">
+          <div class="kind">Pair</div><div class="title">(M,S) Matter / Entropy</div><div class="mini">Matter without informational ordering collapses into label-free brute postulate.</div>
+        </div>
+        <div class="node" data-id="energy" data-kind="equation" data-traces="information consciousness">
+          <div class="kind">Pair</div><div class="title">(E,F) Energy / Faith</div><div class="mini">Faith treated as observation coupling, not sentiment.</div>
+        </div>
+        <div class="node" data-id="quantum" data-kind="equation" data-traces="information math consciousness">
+          <div class="kind">Pair</div><div class="title">(Q,C) Quantum / Coherence</div><div class="mini">Closed subsystems conserve coherence; they do not self-increase it.</div>
+        </div>
+        <div class="node" data-id="time" data-kind="equation" data-traces="information emergent math">
+          <div class="kind">Pair</div><div class="title">(T,K) Time / Knowledge</div><div class="mini">Action framed as minimal-K path under knowledge constraints.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="band" id="bifurcationBand">
+      <div class="band-title">Bifurcation chamber</div>
+      <div class="row cols-3">
+        <div class="node" data-id="sinGrace" data-kind="derivation" data-traces="information matter math consciousness emergent">
+          <div class="kind">Bifurcation</div><div class="title">Internal bifurcation: sin-pole / grace-pole</div><div class="mini">Entropy / decoherence vs. negentropy / external restoration.</div>
+        </div>
+        <div class="node" data-id="born" data-kind="equation" data-traces="information consciousness">
+          <div class="kind">Equation</div><div class="title">Faith = observation coupling</div><div class="mini">Born-rule framing: potential amplitude to measured outcome.</div>
+        </div>
+        <div class="node" data-id="nonunitary" data-kind="equation" data-traces="information">
+          <div class="kind">Theorem</div><div class="title">Grace = external non-unitary operator</div><div class="mini">Closed unitary self-operations cannot flip sign-state into higher coherence.</div>
+        </div>
+      </div>
+      <div class="row cols-4" style="margin-top:12px">
+        <div class="node" data-id="timewall" data-kind="commitment" data-traces="information math emergent">
+          <div class="kind">Commitment</div><div class="title">Time Wall marked intentional, not a gap.</div><div class="mini">Incompleteness becomes bounded design rather than accidental failure.</div>
+        </div>
+        <div class="node" data-id="terminal" data-kind="derivation" data-traces="information consciousness">
+          <div class="kind">Derivation</div><div class="title">Measurement chain terminates in terminal observer.</div><div class="mini">Otherwise the chain remains formally open.</div>
+        </div>
+        <div class="node" data-id="binary" data-kind="commitment" data-traces="information">
+          <div class="kind">Commitment</div><div class="title">A8.1 — Binary moral orientation via SU(2) choice.</div><div class="mini">Forced, not cosmetically chosen.</div>
+        </div>
+        <div class="node" data-id="coherenceLaw" data-kind="derivation" data-traces="information matter math">
+          <div class="kind">Law</div><div class="title">Closed systems cannot self-increase coherence.</div><div class="mini">Open-system dependence is therefore required.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="band" id="evidenceBand">
+      <div class="band-title">Convergence and evidence strip</div>
+      <div class="row cols-2">
+        <div class="node" data-id="convergence" data-kind="evidence" data-status="pass" data-traces="information">
+          <div class="kind">Evidence</div><div class="title">Oxford convergence: 4 / 7 independently confirmed.</div><div class="mini">The visual role is supportive, not substitutional for derivation.</div>
+        </div>
+        <div class="row cols-3">
+          <div class="node" data-id="ecp" data-kind="evidence" data-status="pass" data-traces="information"><div class="kind">Signal</div><div class="title">ECP 6σ</div><div class="meta">Convergence marker</div></div>
+          <div class="node" data-id="pear" data-kind="evidence" data-status="pass" data-traces="information"><div class="kind">Signal</div><div class="title">PEAR 6.3σ</div><div class="meta">Convergence marker</div></div>
+          <div class="node" data-id="prop" data-kind="evidence" data-status="pass" data-traces="information"><div class="kind">Signal</div><div class="title">PROP-COSMOS 5.7σ</div><div class="meta">Convergence marker</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="band" id="closureBand">
+      <div class="band-title">Falsification court / closure layer</div>
+      <div class="row cols-5">
+        <div class="node" data-id="rejectGrace" data-kind="derivation" data-status="dead" data-traces="matter math consciousness emergent">
+          <div class="kind">Rejection test</div><div class="title">Reject external grace</div><div class="mini">Works-based sign-flip impossible.</div>
+        </div>
+        <div class="node" data-id="rejectInfo" data-kind="derivation" data-status="dead" data-traces="matter math consciousness emergent">
+          <div class="kind">Rejection test</div><div class="title">Reject information primacy</div><div class="mini">Matter / math / mind inherit unresolved regress or circularity.</div>
+        </div>
+        <div class="node" data-id="rejectTime" data-kind="derivation" data-status="dead" data-traces="matter math emergent">
+          <div class="kind">Rejection test</div><div class="title">Reject Time Wall</div><div class="mini">Intentional incompleteness denied; system overclaims completion.</div>
+        </div>
+        <div class="node" data-id="rejectObserver" data-kind="derivation" data-status="dead" data-traces="consciousness matter math emergent">
+          <div class="kind">Rejection test</div><div class="title">Reject terminal observer</div><div class="mini">Measurement chain remains open.</div>
+        </div>
+        <div class="node" data-id="rejectCoherence" data-kind="derivation" data-status="dead" data-traces="matter math emergent">
+          <div class="kind">Rejection test</div><div class="title">Reject coherence conservation</div><div class="mini">System loses closure constraints and thermodynamic discipline.</div>
+        </div>
+      </div>
+      <div class="connector">▼ boundary-condition judgment</div>
+      <div class="row cols-2">
+        <div class="node" data-id="closure" data-kind="derivation" data-status="pass" data-traces="information">
+          <div class="kind">Closure</div><div class="title">Christianity closes the boundary-condition system.</div><div class="mini">Claimed on completeness, uniqueness, and terminal-observer closure.</div>
+        </div>
+        <div class="node" data-id="altsfail" data-kind="derivation" data-status="dead" data-traces="matter math consciousness emergent">
+          <div class="kind">Comparison</div><div class="title">Alternatives fail completion / uniqueness / terminal observer.</div><div class="mini">The trace tool shows where each branch strains or terminates.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="detail" id="detailPane">
+      <div class="head">
+        <div>
+          <div class="tag" id="detailKind">Select a node</div>
+          <div class="name" id="detailTitle">Proof details will appear here.</div>
+        </div>
+        <div class="small" id="detailTrace">No trace active.</div>
+      </div>
+      <div class="detail-grid">
+        <div class="detail-card">
+          <h4>Claim / role</h4>
+          <p id="detailClaim">Click any node to inspect its role in the architecture.</p>
+          <h4 style="margin-top:12px">Formal note</h4>
+          <div class="eq" id="detailEq">—</div>
+        </div>
+        <div class="detail-card">
+          <h4>Break condition / implication</h4>
+          <ul id="detailBullets"><li>The explorer is designed to stay readable while still exposing proof structure.</li></ul>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+<script>
+const details = {
+  existence: {kind:'Axiom', title:'A1.1 — Existence', claim:'The architecture starts with a primitive that cannot be denied without being used. This is the base of the entire proof spine.', eq:'deny(existence) ⇒ requires existing denier + existing claim', bullets:['Any negation performs the axiom while attempting to reject it.','Enables distinction and information because there is something to distinguish.']},
+  distinction: {kind:'Axiom', title:'A1.2 — Distinction', claim:'Anything describable must be distinguishable from something else. Distinction is the minimum condition for knowability.', eq:'knowable(x) ⇒ distinguishable(x)', bullets:['Denying distinction uses a distinction between denial and affirmation.','Supports the move from ontology to information.']},
+  primacy: {kind:'Axiom', title:'A1.3 — Information Primacy', claim:'At the critical branching point, distinguishability is identified with information, making information primitive rather than derivative.', eq:'distinguishability ≡ information', bullets:['Alternative primitives can be tested as branch competitors.','The uploaded axiom summaries treat matter/energy as derivative if information is primitive.']},
+  substrate: {kind:'Definition', title:'Substrate Requirement → Logos Field', claim:'If information is real, it cannot float free; it requires a substrate. In this framework the selected substrate is the Logos field.', eq:'information ⇒ substrate ; substrate = Logos field', bullets:['This is where ontology becomes architectural.','It feeds the pair-system layout and closure logic.']},
+  selfground: {kind:'Commitment', title:'A2.2 — Self-grounding chosen', claim:'This is explicitly treated as a framework commitment, not a secretly smuggled proof step.', eq:'chosen(self-grounding) ; not derived(self-grounding)', bullets:['Keeps the diagram honest about what is chosen versus deduced.','Should be visually distinguished from mathematical derivation.']},
+  axioms189: {kind:'Derivation', title:'189 Axioms', claim:'The substrate is not the conclusion but the generator: the system unfolds into a fuller axiom set governing coherence, closure, and paired domains.', eq:'Logos substrate → axiomatic expansion', bullets:['Useful future interaction: click-through into individual axiom cards.','This is one reason a multi-page explorer makes sense.']},
+  matterAlt: {kind:'Alternative branch', title:'Matter primitive', claim:'Matter is argued to fail as primitive because its definition already presupposes informational distinctions.', eq:'matter := {mass, charge, spin, position, ...}', bullets:['Those properties are informational labels.','So matter-as-primitive becomes circular rather than foundational.']},
+  mathAlt: {kind:'Alternative branch', title:'Mathematics primitive', claim:'Mathematical relations can describe structure, but description alone does not instantiate substrate or causal actuality.', eq:'formal relation ≠ ontic substrate', bullets:['Structure is not yet a grounding field.','The branch strains on instantiation, not descriptive power.']},
+  mindAlt: {kind:'Alternative branch', title:'Consciousness primitive', claim:'Consciousness is argued to require distinguishable states and a medium of realization or processing.', eq:'consciousness ⇒ state-differentiation + substrate', bullets:['The branch inherits the substrate problem.','It cannot simply replace information without using it.']},
+  emergentAlt: {kind:'Alternative branch', title:'Information emergent', claim:'Emergence explains higher-order patterning only if a prior structured base already exists. That leaves the primitive question unanswered.', eq:'emergence(x) ⇒ prior structured system', bullets:['This opens regress rather than closing it.','The branch is useful because it looks attractive until traced.']},
+  gravity:{kind:'Equation pair', title:'(G,R) Gravity / Resurrection', claim:'This pair is framed as a closure dependency: remove either side and the system does not close as formulated.', eq:'F = −(δE_int/δr²)+δ_sp = −(δS_int/δr²)', bullets:['In a later version this should expose the full derivation, not the compressed form only.','Interaction can eventually show proof-to-source mapping here.']},
+  matterPair:{kind:'Equation pair', title:'(M,S) Matter / Entropy', claim:'Matter and entropy are treated as interdependent in the architecture rather than independent explanatory islands.', eq:'dS > 0 ; sin = entropy ; grace = negentropy', bullets:['This pair helps eliminate naive materialism.','It also connects the physical and moral vocabularies.']},
+  energy:{kind:'Equation pair', title:'(E,F) Energy / Faith', claim:'Faith is not treated sentimentally but as observation-coupling in the measurement sense.', eq:'P(outcome)=|ψ|²', bullets:['This is where Born-rule framing becomes visually important.','Should probably get a dedicated mini-proof panel in v3.']},
+  quantum:{kind:'Equation pair', title:'(Q,C) Quantum / Coherence', claim:'Coherence is conserved in a closed subsystem; increase requires opening the system or introducing external input.', eq:'unitary U: U†U = I ; closed evolution preserves norm/coherence constraints', bullets:['This is one of the strongest places for controlled interaction.','Trace mode should make open-system dependence obvious.']},
+  time:{kind:'Equation pair', title:'(T,K) Time / Knowledge', claim:'Time and knowledge are bound through a path-logic account where action follows constrained knowledge trajectories.', eq:'dK/dt = −qY ; action = minimal-K path', bullets:['This is also where the Time Wall commitment later matters.','A future layer could connect directly into the ontological decision tree.']},
+  sinGrace:{kind:'Bifurcation', title:'Sin-pole / Grace-pole', claim:'This is the central chamber: entropy/decoherence versus negentropy/restoration, with forced rather than decorative choice structure.', eq:'entropy ↔ decoherence ; grace ↔ negentropy', bullets:['This is where the diagram changes from domain-pairs to closure logic.','A careful visual center here matters more than animation.']},
+  born:{kind:'Equation', title:'Faith = observation coupling', claim:'The proof map uses the Born rule as the visible bridge from potential state to measured outcome.', eq:'P(measurement outcome)=|ψ|²', bullets:['This does not prove theology by itself.','It shows a formal analogy / mapping that the architecture depends on.']},
+  nonunitary:{kind:'Theorem', title:'Grace = external non-unitary operator', claim:'Closed unitary self-operations are treated as insufficient to generate the sign-state transition required for increasing coherence.', eq:'closed unitary evolution cannot self-produce required negentropic sign-flip', bullets:['This is one of the strongest “show the theorem” interaction targets.','It should stay explicitly marked as theorem-level, not mere rhetoric.']},
+  timewall:{kind:'Commitment', title:'Time Wall intentional', claim:'Incompleteness is bounded and marked rather than hidden. The architecture treats this as intentional design, not accidental hole.', eq:'bounded incompleteness ≠ defect', bullets:['Important because it prevents overclaiming.','Also useful rhetorically because it preempts a common objection.']},
+  terminal:{kind:'Derivation', title:'Terminal observer required', claim:'Without a terminal observer the measurement chain remains open; closure fails.', eq:'open measurement chain ⇒ no terminal closure', bullets:['This is a decisive node for many alternative worldviews.','Trace mode should make that visibly apparent.']},
+  binary:{kind:'Commitment', title:'Binary moral orientation via SU(2) choice', claim:'The moral polarity is encoded as a forced binary orientation rather than optional language styling.', eq:'orientation ∈ {+1, −1} (framework framing)', bullets:['This needs careful handling visually so it reads formal, not theatrical.','A later version can connect this to the lossless axiom matrix.']},
+  coherenceLaw:{kind:'Law', title:'Closed systems cannot self-increase coherence', claim:'This law drives open-system dependence and explains why purely self-enclosed restoration fails.', eq:'ΔC_closed ≤ 0 for self-restorative increase claim', bullets:['One of the most important propagation nodes.','Supports the grace / non-unitary operator branch.']},
+  convergence:{kind:'Evidence', title:'Oxford convergence', claim:'The evidence strip is supportive. It is not the proof, but convergence claims are shown as reinforcement of the architecture.', eq:'4 / 7 independently confirmed', bullets:['Best shown in a narrow band rather than dominating the page.','Could later link to source packets or PDFs.']},
+  ecp:{kind:'Evidence', title:'ECP 6σ', claim:'Compact evidence marker.', eq:'σ = 6.0', bullets:['Supportive role only.']},
+  pear:{kind:'Evidence', title:'PEAR 6.3σ', claim:'Compact evidence marker.', eq:'σ = 6.3', bullets:['Supportive role only.']},
+  prop:{kind:'Evidence', title:'PROP-COSMOS 5.7σ', claim:'Compact evidence marker.', eq:'σ = 5.7', bullets:['Supportive role only.']},
+  rejectGrace:{kind:'Rejection test', title:'Reject external grace', claim:'The architecture argues that self-contained systems cannot perform the needed restorative sign-flip.', eq:'no external input ⇒ no works-based sign-flip', bullets:['This is a rejection result, not a starting axiom.','Should be rendered in the court layer, not the foundation.']},
+  rejectInfo:{kind:'Rejection test', title:'Reject information primacy', claim:'If information is demoted, the alternative primitive must absorb the regress, circularity, or instantiation problem.', eq:'¬info-primacy ⇒ unresolved primitive burden', bullets:['This node connects directly to the branch competitors above.','Trace mode makes it much easier to understand.']},
+  rejectTime:{kind:'Rejection test', title:'Reject Time Wall', claim:'Denying bounded incompleteness forces the system to overclaim closure or hide its limits.', eq:'¬TimeWall ⇒ overextended completeness claim', bullets:['Useful honesty node.','Not flashy, but strong.']},
+  rejectObserver:{kind:'Rejection test', title:'Reject terminal observer', claim:'Without terminal observation the chain never fully resolves.', eq:'¬terminal observer ⇒ open chain', bullets:['This is one of the cleanest failure points for alternative branches.']},
+  rejectCoherence:{kind:'Rejection test', title:'Reject coherence conservation', claim:'If coherence discipline is abandoned, closure claims become unconstrained and arbitrary.', eq:'¬coherence conservation ⇒ unconstrained closure', bullets:['This protects the proof from becoming mere symbolism.']},
+  closure:{kind:'Closure', title:'Christianity closes the boundary-condition system', claim:'This node states the framework’s intended closure judgment after the preceding eliminations, pair checks, and bifurcation logic.', eq:'closure = completeness + uniqueness + terminal observer + external restoration', bullets:['This is the culminating claim of the map.','In publication form it should link to the fuller proof packet.']},
+  altsfail:{kind:'Comparison', title:'Alternatives fail completion / uniqueness / terminal observer', claim:'Alternative primitive paths do not merely differ aesthetically; they are claimed to terminate in specific unresolved burdens.', eq:'alt branch ⇒ strain / regress / non-closure', bullets:['Exactly the sort of thing the propagation-map style interaction is good at showing.']}
+};
+
+const nodes = [...document.querySelectorAll('.node')];
+const detailKind = document.getElementById('detailKind');
+const detailTitle = document.getElementById('detailTitle');
+const detailClaim = document.getElementById('detailClaim');
+const detailEq = document.getElementById('detailEq');
+const detailBullets = document.getElementById('detailBullets');
+const detailTrace = document.getElementById('detailTrace');
+
+nodes.forEach(node => node.addEventListener('click', () => showDetail(node.dataset.id)));
+function showDetail(id){
+  const d = details[id]; if(!d) return;
+  detailKind.textContent = d.kind;
+  detailTitle.textContent = d.title;
+  detailClaim.textContent = d.claim;
+  detailEq.textContent = d.eq;
+  detailBullets.innerHTML = d.bullets.map(x => `<li>${x}</li>`).join('');
+}
+showDetail('primacy');
+
+function applyLayerFilters(){
+  const on = new Set([...document.querySelectorAll('[data-layer-toggle]')].filter(i=>i.checked).map(i=>i.dataset.layerToggle));
+  nodes.forEach(n => n.classList.toggle('hidden-layer', !on.has(n.dataset.kind)));
+}
+[...document.querySelectorAll('[data-layer-toggle]')].forEach(i => i.addEventListener('change', applyLayerFilters));
+document.getElementById('showAll').addEventListener('click', ()=>{
+  document.querySelectorAll('[data-layer-toggle]').forEach(i=>i.checked=true); applyLayerFilters();
+});
+document.getElementById('showCore').addEventListener('click', ()=>{
+  document.querySelectorAll('[data-layer-toggle]').forEach(i=>i.checked = ['axiom','definition','derivation','commitment'].includes(i.dataset.layerToggle)); applyLayerFilters();
+});
+applyLayerFilters();
+
+const traceSelect = document.getElementById('traceSelect');
+function applyTrace(){
+  const val = traceSelect.value;
+  nodes.forEach(n=>{ n.classList.remove('trace-hit','trace-dim');
+    if(!val) return;
+    const traces = (n.dataset.traces||'').split(/\s+/).filter(Boolean);
+    if(traces.includes(val)) n.classList.add('trace-hit'); else n.classList.add('trace-dim');
+  });
+  detailTrace.textContent = val ? `Trace active: ${val} primitive` : 'No trace active.';
+}
+traceSelect.addEventListener('change', applyTrace);
+document.getElementById('clearTrace').addEventListener('click', ()=>{traceSelect.value=''; applyTrace();});
+applyTrace();
+</script>
+</body>
+</html>

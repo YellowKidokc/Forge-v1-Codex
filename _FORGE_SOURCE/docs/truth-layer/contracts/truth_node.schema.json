@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://theophysics/forge/truth-node.schema.json",
+  "title": "TruthNode",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "node_id",
+    "statement",
+    "scope",
+    "question_type",
+    "facets",
+    "death_tests",
+    "gates"
+  ],
+  "properties": {
+    "node_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "statement": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scope": {
+      "type": "string",
+      "enum": ["word", "sentence", "paragraph", "verse", "chapter", "book", "corpus"]
+    },
+    "question_type": {
+      "type": "string",
+      "enum": ["does_x_hold", "what_is_x", "what_grounds_x", "what_must_x_be"]
+    },
+    "facets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entity", "role", "evidence", "time", "ops", "context", "provenance"],
+      "properties": {
+        "entity": { "$ref": "#/$defs/facetValue" },
+        "role": { "$ref": "#/$defs/facetValue" },
+        "evidence": { "$ref": "#/$defs/facetValue" },
+        "time": { "$ref": "#/$defs/facetValue" },
+        "ops": { "$ref": "#/$defs/facetValue" },
+        "context": { "$ref": "#/$defs/facetValue" },
+        "provenance": { "$ref": "#/$defs/facetValue" }
+      }
+    },
+    "death_tests": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "self_refutation",
+        "infinite_regress",
+        "empirical_contradiction",
+        "logical_incoherence"
+      ],
+      "properties": {
+        "self_refutation": { "type": "boolean" },
+        "infinite_regress": { "type": "boolean" },
+        "empirical_contradiction": { "type": "boolean" },
+        "logical_incoherence": { "type": "boolean" }
+      }
+    },
+    "gates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["structural", "mathematical", "empirical", "cross_domain", "adversarial"],
+      "properties": {
+        "structural": { "type": "number", "minimum": 0, "maximum": 100 },
+        "mathematical": { "type": "number", "minimum": 0, "maximum": 100 },
+        "empirical": { "type": "number", "minimum": 0, "maximum": 100 },
+        "cross_domain": { "type": "number", "minimum": 0, "maximum": 100 },
+        "adversarial": { "type": "number", "minimum": 0, "maximum": 100 }
+      }
+    },
+    "t_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "tier": {
+      "type": "string",
+      "enum": ["weak", "provisional", "strong", "near-canonical"]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "raw_payload": {
+      "type": "object"
+    }
+  },
+  "$defs": {
+    "facetValue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value"],
+      "properties": {
+        "value": { "type": "string" },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "type", "content"],
+            "properties": {
+              "id": { "type": "string" },
+              "type": {
+                "type": "string",
+                "enum": ["note", "tag", "equation", "link", "source", "task", "flag"]
+              },
+              "content": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

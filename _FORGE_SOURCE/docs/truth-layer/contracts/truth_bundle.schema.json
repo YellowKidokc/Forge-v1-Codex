@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://theophysics/forge/truth-bundle.schema.json",
+  "title": "TruthBundle",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "nodes": {
+      "type": "array",
+      "items": {
+        "$ref": "truth_node.schema.json"
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "$ref": "truth_edge.schema.json"
+      }
+    },
+    "session": {
+      "$ref": "truth_session.schema.json"
+    }
+  }
+}

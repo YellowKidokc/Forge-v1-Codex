@@ -1,0 +1,79 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Theophysics Proof Overview</title><style>
+:root {
+  --bg:#0a0b0f; --bg2:#12141c; --bg3:#0e1018; --border:#1e2233; --border2:#2a3050;
+  --text:#e8e6e1; --text2:#a2a7b8; --text3:#6d7385; --gold:#d4a853; --phys:#38bdf8;
+  --theo:#a78bfa; --bif:#34d399; --dead:#ef4444; --warn:#f59e0b; --pass:#2dd4a0;
+  --axiom: rgba(212,168,83,.08); --definition: rgba(56,189,248,.08); --derivation: rgba(167,139,250,.08);
+  --equation: rgba(45,212,160,.08); --evidence: rgba(45,212,160,.08); --commitment: rgba(245,158,11,.08);
+}
+*{box-sizing:border-box} html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;scroll-behavior:smooth}
+body::before{content:"";position:fixed;inset:0;background:radial-gradient(circle at 20% 0%, rgba(56,189,248,.04), transparent 35%),radial-gradient(circle at 90% 100%, rgba(167,139,250,.04), transparent 35%);pointer-events:none}
+a{color:inherit;text-decoration:none}
+.shell{position:relative;z-index:1;display:grid;grid-template-columns:290px 1fr;min-height:100vh}
+.sidebar{position:sticky;top:0;height:100vh;overflow:auto;border-right:1px solid var(--border);background:rgba(10,11,15,.9);backdrop-filter: blur(8px);padding:28px 22px 40px}
+.main{padding:30px 34px 80px;max-width:1500px}
+.kicker{font:600 11px ui-monospace, SFMono-Regular, Menlo, monospace;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:14px}
+h1,h2,h3{margin:0} h1{font-family:Georgia, 'Times New Roman', serif;font-size:42px;line-height:1.05;margin-bottom:10px} h2{font-family:Georgia, 'Times New Roman', serif;font-size:28px;margin:28px 0 12px}
+h3{font-family:Georgia, 'Times New Roman', serif;font-size:20px;margin:18px 0 10px}
+.sub{color:var(--text2);line-height:1.65;font-size:14px}
+.section{margin-bottom:28px;padding-bottom:24px;border-bottom:1px solid var(--border)}
+.muted{color:var(--text3)}
+.nav{display:grid;gap:8px;margin-top:18px}
+.nav a{padding:11px 12px;border:1px solid var(--border);border-radius:12px;color:var(--text2);background:var(--bg2);font-size:13px}
+.nav a.active,.nav a:hover{border-color:var(--gold);color:var(--text);background:rgba(212,168,83,.08)}
+.badge-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.badge{padding:7px 10px;border:1px solid var(--border);border-radius:999px;font-size:12px;color:var(--text2);background:var(--bg2)}
+.hero{display:flex;justify-content:space-between;gap:18px;align-items:end;padding-bottom:18px;border-bottom:1px solid var(--border);margin-bottom:24px}
+.grid{display:grid;gap:16px}
+.grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:18px}
+.card h3{margin-top:0}
+.card p{color:var(--text2);line-height:1.65;font-size:14px}
+.card ul{margin:10px 0 0 18px;color:var(--text2);line-height:1.65}
+.band-link{display:block}
+.band-link .card{height:100%}
+.node{padding:14px 16px;border-radius:14px;border:1px solid var(--border);background:var(--bg2);margin-bottom:12px}
+.node .tag{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;margin-bottom:8px;color:var(--text2);border:1px solid var(--border)}
+.node p{margin:7px 0 0;color:var(--text2);line-height:1.6;font-size:14px}
+.node.axiom{background:linear-gradient(180deg, var(--axiom), transparent), var(--bg2)}
+.node.definition{background:linear-gradient(180deg, var(--definition), transparent), var(--bg2)}
+.node.derivation{background:linear-gradient(180deg, var(--derivation), transparent), var(--bg2)}
+.node.equation{background:linear-gradient(180deg, var(--equation), transparent), var(--bg2)}
+.node.evidence{background:linear-gradient(180deg, var(--evidence), transparent), var(--bg2)}
+.node.commitment{background:linear-gradient(180deg, var(--commitment), transparent), var(--bg2)}
+.eq{font-family:ui-monospace, SFMono-Regular, Menlo, monospace;font-size:13px;background:var(--bg3);border:1px solid var(--border);padding:10px 12px;border-radius:12px;color:#dfe8ff;overflow:auto}
+.callout{border-left:3px solid var(--gold);padding:14px 16px;background:rgba(212,168,83,.06);border-radius:0 12px 12px 0;color:var(--text2);line-height:1.65}
+.trace{border:1px solid rgba(45,212,160,.35);background:rgba(45,212,160,.06);padding:14px 16px;border-radius:14px}
+.dead{border-color:rgba(239,68,68,.35);background:rgba(239,68,68,.06)}
+.footer-nav{display:flex;justify-content:space-between;gap:16px;margin-top:28px}
+.footer-nav a{flex:1;padding:14px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:14px;color:var(--text2);text-align:center}
+.footer-nav a:hover{border-color:var(--gold);color:var(--text)}
+@media(max-width:980px){.shell{grid-template-columns:1fr}.sidebar{position:relative;height:auto;border-right:none;border-bottom:1px solid var(--border)}.main{padding:24px 18px 60px}.grid.two,.grid.three{grid-template-columns:1fr}.hero{display:block}}
+</style></head><body><div class="shell"><aside class="sidebar"><div class="kicker">Faith Through Physics · Proof</div><h2 style="font-size:30px;margin:0 0 8px">Theophysics Proof System</h2><p class="sub">Standalone, interlinked, measured pages for the main proof architecture. Use the overview as the map; use the section pages as the zoom layers.</p><div class="nav"><a href="index.html">Proof Overview</a><a href="foundation.html">Foundation Spine</a><a href="subsystems.html">Five Paired Subsystems</a><a href="bifurcation.html">Bifurcation Chamber</a><a href="evidence.html">Convergence & Evidence</a><a href="falsification.html">Falsification Court</a><a href="closure.html">Closure Layer</a></div><div class="section" style="margin-top:20px"><div class="kicker" style="margin-bottom:8px;color:var(--text3)">Notes</div><p class="sub">This edition stays restrained: no flashy motion, no popup overload, just layered navigation and a canonical right-sized structure for web publication.</p></div></aside><main class="main"><div class="hero"><div><div class="kicker">Canonical multi-page architecture</div><h1>Theophysics Proof Overview</h1><p class="sub">A publication-ready, interlinked proof section designed for web use. Start here, then move into the deep pages.</p></div><div class="badge-row"><div class="badge">Self-contained HTML</div><div class="badge">Interlinked pages</div><div class="badge">Academic presentation</div></div></div>
+<div class="callout">This is the multi-page proof architecture: one overview page plus six deep pages. It is meant for publication on <strong>faiththroughphysics.com</strong> as a navigable proof surface rather than a single overloaded poster.</div>
+<h2>System Map</h2>
+<div class="grid three">
+  <a class="band-link" href="foundation.html"><div class="card"><h3>Foundation Spine</h3><p>Existence → distinction → information primacy → substrate → self-grounding → 189 axioms.</p></div></a>
+  <a class="band-link" href="subsystems.html"><div class="card"><h3>Five Paired Subsystems</h3><p>The symmetry-pair ecosystem: (G,R), (M,S), (E,F), (Q,C), (T,K), each with closure tests.</p></div></a>
+  <a class="band-link" href="bifurcation.html"><div class="card"><h3>Bifurcation Chamber</h3><p>The forced split: sin-pole / grace-pole, Born-rule coupling, non-unitary grace, Time Wall, terminal observer.</p></div></a>
+  <a class="band-link" href="evidence.html"><div class="card"><h3>Convergence & Evidence</h3><p>Oxford convergence and the empirical strip: ECP, PEAR, PROP-COSMOS, and what the evidence is doing structurally.</p></div></a>
+  <a class="band-link" href="falsification.html"><div class="card"><h3>Falsification Court</h3><p>Rejection scenarios, break conditions, and why each alternative path opens a contradiction or incompleteness.</p></div></a>
+  <a class="band-link" href="closure.html"><div class="card"><h3>Closure Layer</h3><p>The final closure claim, boundary-condition completion, and why alternatives fail on completeness, uniqueness, or observer termination.</p></div></a>
+</div>
+<h2>What this solves</h2>
+<div class="grid two">
+  <div class="card"><h3>Not everything on one page</h3><p>The overview remains legible. Each major band gets its own room, so the proof can breathe and the user can move from world-map scale to section-level detail.</p></div>
+  <div class="card"><h3>Website-ready architecture</h3><p>These pages interlink cleanly, so they can be published directly as a proof section on the site without introducing a heavy framework.</p></div>
+</div>
+<div class="footer-nav"><a href="foundation.html">Enter the Foundation Spine →</a><a href="closure.html">Jump straight to Closure →</a></div>
+</main></div><script>
+function setActiveNav(){
+  const path = location.pathname.split('/').pop() || 'index.html';
+  document.querySelectorAll('.nav a').forEach(a=>{
+    const href = a.getAttribute('href');
+    if(href===path) a.classList.add('active');
+  });
+}
+window.addEventListener('DOMContentLoaded', setActiveNav);
+</script></body></html>

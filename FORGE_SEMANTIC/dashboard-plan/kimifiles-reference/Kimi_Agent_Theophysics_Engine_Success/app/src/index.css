@@ -1,0 +1,231 @@
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Traditional Black Color Scheme */
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+    --card: 0 0% 4%;
+    --card-foreground: 0 0% 100%;
+    --popover: 0 0% 4%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 45 80% 52%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 0 0% 7%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 63%;
+    --accent: 45 80% 52%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 16%;
+    --input: 0 0% 12%;
+    --ring: 45 80% 52%;
+    --radius: 0.5rem;
+    
+    /* Custom Colors */
+    --gold: 45 80% 52%;
+    --gold-light: 45 80% 65%;
+    --orange: 38 92% 50%;
+    --cyan: 187 94% 43%;
+    --purple: 258 90% 66%;
+    --success: 142 71% 45%;
+    --warning: 38 92% 50%;
+    --error: 0 84% 60%;
+    --info: 217 91% 60%;
+    
+    /* Sidebar */
+    --sidebar-background: 0 0% 4%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 45 80% 52%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 0 0% 10%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 16%;
+    --sidebar-ring: 45 80% 52%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  
+  code, pre, .mono {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  }
+}
+
+@layer components {
+  /* Custom Scrollbar */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 3px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground));
+  }
+  
+  /* Section Card */
+  .section-card {
+    @apply bg-card border border-border rounded-lg;
+  }
+  
+  /* Gold Accent Button */
+  .btn-gold {
+    @apply bg-[hsl(var(--gold))] text-black font-medium px-4 py-2 rounded-md 
+           transition-all duration-150 hover:brightness-110 hover:-translate-y-0.5
+           active:translate-y-0;
+  }
+  
+  /* Ghost Button */
+  .btn-ghost {
+    @apply text-foreground/80 hover:text-foreground hover:bg-muted/50 
+           px-3 py-1.5 rounded-md transition-colors duration-150;
+  }
+  
+  /* Status Badge */
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full;
+  }
+  
+  .badge-primitive {
+    @apply badge bg-emerald-500/20 text-emerald-400 border border-emerald-500/30;
+  }
+  
+  .badge-derived {
+    @apply badge bg-blue-500/20 text-blue-400 border border-blue-500/30;
+  }
+  
+  .badge-definition {
+    @apply badge bg-purple-500/20 text-purple-400 border border-purple-500/30;
+  }
+  
+  .badge-lemma {
+    @apply badge bg-amber-500/20 text-amber-400 border border-amber-500/30;
+  }
+  
+  /* Collapsible Section */
+  .collapsible-section {
+    @apply border-b border-border last:border-b-0;
+  }
+  
+  .collapsible-header {
+    @apply flex items-center justify-between w-full py-4 px-4 
+           hover:bg-muted/30 transition-colors duration-150 cursor-pointer;
+  }
+  
+  .collapsible-content {
+    @apply px-4 pb-4 overflow-hidden;
+  }
+  
+  /* Math Block */
+  .math-block {
+    @apply bg-muted/50 rounded-lg p-4 my-4 font-mono text-sm overflow-x-auto;
+  }
+  
+  /* Dependency Link */
+  .dep-link {
+    @apply inline-flex items-center gap-1.5 text-[hsl(var(--gold))] 
+           hover:underline cursor-pointer transition-opacity duration-150
+           hover:opacity-80;
+  }
+  
+  /* Graph Node */
+  .graph-node {
+    @apply w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium
+           transition-all duration-200 cursor-pointer;
+  }
+  
+  .graph-node-active {
+    @apply graph-node bg-[hsl(var(--gold))] text-black ring-2 ring-[hsl(var(--gold))] ring-offset-2 ring-offset-background;
+  }
+  
+  .graph-node-default {
+    @apply graph-node bg-muted border border-border hover:border-[hsl(var(--gold))]/50;
+  }
+  
+  /* Analytics Bar */
+  .analytics-bar {
+    @apply h-2 rounded-full bg-muted overflow-hidden;
+  }
+  
+  .analytics-bar-fill {
+    @apply h-full rounded-full transition-all duration-500;
+  }
+}
+
+@layer utilities {
+  .text-gold {
+    color: hsl(var(--gold));
+  }
+  
+  .bg-gold {
+    background-color: hsl(var(--gold));
+  }
+  
+  .border-gold {
+    border-color: hsl(var(--gold));
+  }
+  
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+  
+  .animate-slide-in-left {
+    animation: slideInLeft 0.4s ease-out;
+  }
+  
+  .animate-slide-in-right {
+    animation: slideInRight 0.4s ease-out;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  @keyframes slideInLeft {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  
+  @keyframes slideInRight {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+}

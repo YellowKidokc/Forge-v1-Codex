@@ -1,0 +1,723 @@
+@import "tailwindcss";
+
+@theme {
+  --color-forge-ember: #ff4d00;
+  --color-forge-steel: #2a2a2a;
+  --color-forge-iron: #1e1e1e;
+}
+
+:root {
+  background-color: #1a1a1a;
+  color: #e0e0e0;
+  --forge-ui-font-family: "Inter", system-ui, -apple-system, sans-serif;
+  --forge-editor-font-size: 15px;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #1a1a1a;
+  color: #e0e0e0;
+  font-family: var(--forge-ui-font-family);
+  height: 100vh;
+  width: 100vw;
+}
+
+#root {
+  height: 100%;
+  width: 100%;
+}
+
+/* ============================================
+   Scrollbar
+   ============================================ */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #ff4d00;
+}
+
+/* ============================================
+   TipTap Editor Core
+   ============================================ */
+.forge-editor-content {
+  outline: none;
+  min-height: 60vh;
+  font-size: var(--forge-editor-font-size);
+  line-height: 1.7;
+  color: #d4d4d4;
+}
+
+.forge-editor-content > *:first-child {
+  margin-top: 0;
+}
+
+/* Paragraphs */
+.forge-editor-content p {
+  margin: 0.5em 0;
+}
+
+/* Headings */
+.forge-editor-content h1 {
+  font-size: 1.8em;
+  font-weight: 800;
+  color: #fff;
+  margin: 1.2em 0 0.4em;
+  letter-spacing: -0.02em;
+}
+
+.forge-editor-content h2 {
+  font-size: 1.4em;
+  font-weight: 700;
+  color: #f0f0f0;
+  margin: 1em 0 0.3em;
+  letter-spacing: -0.01em;
+}
+
+.forge-editor-content h3 {
+  font-size: 1.15em;
+  font-weight: 600;
+  color: #e0e0e0;
+  margin: 0.8em 0 0.3em;
+}
+
+/* Inline formatting */
+.forge-editor-content strong {
+  color: #fff;
+  font-weight: 700;
+}
+
+.forge-editor-content em {
+  color: #ccc;
+  font-style: italic;
+}
+
+.forge-editor-content u {
+  text-decoration: underline;
+}
+
+.forge-editor-content s {
+  text-decoration: line-through;
+  color: #666;
+}
+
+/* Task Lists */
+.forge-editor-content ul[data-type="taskList"] {
+  list-style: none;
+  padding: 0;
+}
+
+.forge-editor-content ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+}
+
+.forge-editor-content ul[data-type="taskList"] li > label {
+  flex: 0 0 auto;
+  user-select: none;
+  margin-right: 0.5rem;
+  margin-top: 0.2rem;
+}
+
+.forge-editor-content ul[data-type="taskList"] li > div {
+  flex: 1 1 auto;
+}
+
+.forge-editor-content ul[data-type="taskList"] input[type="checkbox"] {
+  cursor: pointer;
+  accent-color: #ff4d00;
+  width: 1.1em;
+  height: 1.1em;
+}
+
+/* Tables */
+.forge-editor-content table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+.forge-editor-content table td,
+.forge-editor-content table th {
+  min-width: 1em;
+  border: 1px solid #333;
+  padding: 3px 5px;
+  vertical-align: top;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.forge-editor-content table th {
+  font-weight: bold;
+  text-align: left;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.forge-editor-content table .selectedCell:after {
+  z-index: 2;
+  position: absolute;
+  content: "";
+  left: 0; right: 0; top: 0; bottom: 0;
+  background: rgba(255, 77, 0, 0.08);
+  pointer-events: none;
+}
+
+.forge-editor-content table .column-resize-handle {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: -2px;
+  width: 4px;
+  background-color: #ff4d00;
+  pointer-events: none;
+}
+
+.forge-editor-content .tableWrapper {
+  overflow-x: auto;
+  margin: 1.5em 0;
+}
+
+.forge-editor-content code {
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+  font-size: 0.88em;
+  background: rgba(255, 77, 0, 0.08);
+  border: 1px solid rgba(255, 77, 0, 0.15);
+  border-radius: 3px;
+  padding: 0.1em 0.35em;
+  color: #ff7733;
+}
+
+/* Code blocks */
+.forge-editor-content pre {
+  background: #141414;
+  border: 1px solid #2a2a2a;
+  border-radius: 6px;
+  padding: 1em;
+  margin: 1em 0;
+  overflow-x: auto;
+}
+
+.forge-editor-content pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #d4d4d4;
+  font-size: 0.85em;
+}
+
+/* Blockquotes */
+.forge-editor-content blockquote {
+  border-left: 3px solid #ff4d00;
+  padding-left: 1em;
+  margin: 1em 0;
+  color: #999;
+  font-style: italic;
+}
+
+/* Lists */
+.forge-editor-content ul {
+  padding-left: 1.5em;
+  margin: 0.5em 0;
+}
+
+.forge-editor-content li {
+  margin: 0.25em 0;
+}
+
+.forge-editor-content li p {
+  margin: 0;
+}
+
+/* Horizontal rule */
+.forge-editor-content hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(to right, transparent, #ff4d00, transparent);
+  margin: 2em 0;
+}
+
+/* Placeholder */
+.forge-editor-content p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #444;
+  pointer-events: none;
+  height: 0;
+  font-style: italic;
+}
+
+.forge-editor-content h1.is-empty::before,
+.forge-editor-content h2.is-empty::before,
+.forge-editor-content h3.is-empty::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #333;
+  pointer-events: none;
+  height: 0;
+}
+
+/* ============================================
+   Promoted Block
+   ============================================ */
+.promoted-block-wrapper {
+  margin: 1.2em -1.5em;
+  border: 1px solid rgba(255, 77, 0, 0.2);
+  border-left: 3px solid #ff4d00;
+  border-radius: 0 6px 6px 0;
+  background: linear-gradient(135deg, rgba(255, 77, 0, 0.03) 0%, rgba(255, 77, 0, 0.01) 100%);
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.promoted-block-wrapper:hover {
+  border-color: rgba(255, 77, 0, 0.35);
+  background: linear-gradient(135deg, rgba(255, 77, 0, 0.05) 0%, rgba(255, 77, 0, 0.02) 100%);
+}
+
+.promoted-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(255, 77, 0, 0.1);
+  user-select: none;
+}
+
+.promoted-block-collapse {
+  color: #666;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  background: none;
+  border: none;
+  padding: 0;
+}
+.promoted-block-collapse:hover {
+  color: #ff4d00;
+}
+
+.promoted-block-type {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 1px 6px;
+  border-radius: 3px;
+  transition: background 0.15s;
+}
+.promoted-block-type:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.promoted-block-id {
+  font-size: 9px;
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+  color: #555;
+}
+
+.promoted-block-action {
+  background: none;
+  border: none;
+  color: #555;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s, background 0.15s;
+}
+.promoted-block-action:hover {
+  color: #ff4d00;
+  background: rgba(255, 77, 0, 0.1);
+}
+
+.promoted-block-content {
+  padding: 12px 16px;
+  min-height: 1.5em;
+}
+
+.promoted-block-collapsed {
+  padding: 4px 16px;
+}
+
+/* AI button states */
+.promoted-block-action.ai-loading {
+  color: #ff4d00;
+}
+
+.promoted-block-action.ai-active {
+  color: #ff4d00;
+  background: rgba(255, 77, 0, 0.1);
+}
+
+/* ============================================
+   AI Response Panel
+   ============================================ */
+.ai-response-panel {
+  border-top: 1px solid rgba(255, 77, 0, 0.15);
+  background: rgba(0, 0, 0, 0.25);
+  margin: 0;
+}
+
+.ai-response-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 12px;
+  border-bottom: 1px solid rgba(255, 77, 0, 0.08);
+  user-select: none;
+}
+
+.ai-response-command {
+  font-size: 9px;
+  font-weight: 800;
+  color: #ff4d00;
+  letter-spacing: 0.1em;
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+}
+
+.ai-response-streaming {
+  font-size: 9px;
+  color: #666;
+  font-style: italic;
+}
+
+.ai-response-action {
+  background: none;
+  border: none;
+  color: #555;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s;
+}
+.ai-response-action:hover {
+  color: #ccc;
+}
+
+.ai-response-body {
+  padding: 10px 16px;
+  font-size: 12px;
+  line-height: 1.65;
+  color: #aaa;
+  white-space: pre-wrap;
+  font-family: "Inter", system-ui, sans-serif;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+/* ============================================
+   Editor Toolbar
+   ============================================ */
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 12px;
+  border-bottom: 1px solid #222;
+  background: #1a1a1a;
+  flex-shrink: 0;
+}
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 18px;
+  background: #333;
+  margin: 0 6px;
+}
+
+.toolbar-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: #777;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.toolbar-btn:hover {
+  color: #ddd;
+  background: #2a2a2a;
+}
+
+.toolbar-btn-active {
+  color: #ff4d00;
+  background: rgba(255, 77, 0, 0.1);
+}
+
+.toolbar-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.toolbar-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ============================================
+   AI Panel (Right Side)
+   ============================================ */
+.ai-panel {
+  width: 360px;
+  height: 100vh;
+  background: #161616;
+  border-left: 1px solid #2a2a2a;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  z-index: 20;
+}
+
+.ai-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid #222;
+  background: #1a1a1a;
+}
+
+.ai-panel-btn {
+  background: none;
+  border: none;
+  color: #555;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s, background 0.15s;
+}
+.ai-panel-btn:hover {
+  color: #ccc;
+  background: #2a2a2a;
+}
+
+.ai-panel-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ai-panel-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.ai-panel-suggestion {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-size: 10px;
+  color: #666;
+  padding: 6px 10px;
+  border: 1px solid #2a2a2a;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.ai-panel-suggestion:hover {
+  color: #ff4d00;
+  border-color: rgba(255, 77, 0, 0.3);
+  background: rgba(255, 77, 0, 0.03);
+}
+
+/* Messages */
+.ai-msg {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.ai-msg-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.ai-msg-user .ai-msg-icon {
+  background: rgba(255, 77, 0, 0.15);
+  color: #ff4d00;
+}
+
+.ai-msg-assistant .ai-msg-icon {
+  background: rgba(100, 100, 255, 0.1);
+  color: #8888ff;
+}
+
+.ai-msg-content {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #bbb;
+  white-space: pre-wrap;
+  word-break: break-word;
+  flex: 1;
+  min-width: 0;
+}
+
+.ai-msg-user .ai-msg-content {
+  color: #ddd;
+}
+
+.ai-cursor {
+  color: #ff4d00;
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+/* Input area */
+.ai-panel-input-area {
+  border-top: 1px solid #222;
+  padding: 8px 12px 12px;
+  background: #1a1a1a;
+}
+
+.ai-panel-file-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9px;
+  color: #555;
+  padding: 3px 8px;
+  border: 1px solid #2a2a2a;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  margin-bottom: 6px;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.ai-panel-file-toggle:hover {
+  color: #999;
+  border-color: #444;
+}
+.ai-panel-file-toggle.active {
+  color: #ff4d00;
+  border-color: rgba(255, 77, 0, 0.3);
+  background: rgba(255, 77, 0, 0.05);
+}
+
+.ai-panel-input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.ai-panel-textarea {
+  flex: 1;
+  background: #111;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #ddd;
+  font-size: 12px;
+  font-family: "Inter", system-ui, sans-serif;
+  resize: none;
+  outline: none;
+  min-height: 36px;
+  max-height: 120px;
+  line-height: 1.4;
+  transition: border-color 0.15s;
+}
+.ai-panel-textarea:focus {
+  border-color: rgba(255, 77, 0, 0.4);
+}
+.ai-panel-textarea::placeholder {
+  color: #444;
+}
+.ai-panel-textarea:disabled {
+  opacity: 0.4;
+}
+
+.ai-panel-send {
+  background: rgba(255, 77, 0, 0.15);
+  border: none;
+  color: #ff4d00;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.ai-panel-send:hover {
+  background: rgba(255, 77, 0, 0.25);
+}
+.ai-panel-send:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.ai-panel-send.abort {
+  background: rgba(255, 50, 50, 0.15);
+  color: #ff4444;
+}
+.ai-panel-send.abort:hover {
+  background: rgba(255, 50, 50, 0.25);
+}
+
+/* Toggle button (right edge when panel is closed) */
+.ai-panel-toggle {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #1e1e1e;
+  border: 1px solid #2a2a2a;
+  border-right: none;
+  border-radius: 6px 0 0 6px;
+  padding: 12px 6px;
+  color: #555;
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s, border-color 0.2s;
+  z-index: 15;
+}
+.ai-panel-toggle:hover {
+  color: #ff4d00;
+  background: #222;
+  border-color: rgba(255, 77, 0, 0.3);
+}

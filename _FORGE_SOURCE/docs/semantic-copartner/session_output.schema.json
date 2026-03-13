@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SemanticCoPartnerSession",
+  "type": "object",
+  "required": [
+    "session_id",
+    "belief_statement",
+    "confidence_before",
+    "confidence_after",
+    "hypotheses",
+    "evidence_matrix",
+    "provisional_conclusion",
+    "flip_conditions"
+  ],
+  "properties": {
+    "session_id": { "type": "string" },
+    "belief_statement": { "type": "string" },
+    "user_lean_before": { "type": "string" },
+    "user_lean_after": { "type": "string" },
+    "confidence_before": { "type": "number", "minimum": 0, "maximum": 100 },
+    "confidence_after": { "type": "number", "minimum": 0, "maximum": 100 },
+    "hypotheses": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "object",
+        "required": ["hypothesis_id", "label", "best_for", "best_against"],
+        "properties": {
+          "hypothesis_id": { "type": "string" },
+          "label": { "type": "string" },
+          "best_for": { "type": "array", "items": { "type": "string" } },
+          "best_against": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "evidence_matrix": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["source", "claim", "direction", "strength"],
+        "properties": {
+          "source": { "type": "string" },
+          "claim": { "type": "string" },
+          "direction": { "type": "string", "enum": ["supports", "opposes", "mixed"] },
+          "strength": { "type": "number", "minimum": 0, "maximum": 1 },
+          "notes": { "type": "string" }
+        }
+      }
+    },
+    "unresolved_objections": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "provisional_conclusion": { "type": "string" },
+    "flip_conditions": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "next_actions": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

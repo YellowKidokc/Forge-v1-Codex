@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://theophysics/forge/truth-edge.schema.json",
+  "title": "TruthEdge",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["edge_id", "from_node_id", "to_node_id", "edge_type"],
+  "properties": {
+    "edge_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "from_node_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "to_node_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "edge_type": {
+      "type": "string",
+      "enum": [
+        "supports",
+        "attacks",
+        "depends_on",
+        "bridges",
+        "extends",
+        "contradicts",
+        "maps_to",
+        "references"
+      ]
+    },
+    "weight": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "evidence_status": {
+      "type": "string",
+      "enum": ["asserted", "provisional", "verified", "disputed", "unresolved"]
+    },
+    "context": {
+      "type": "string"
+    },
+    "provenance": {
+      "type": "string"
+    },
+    "metadata": {
+      "type": "object"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

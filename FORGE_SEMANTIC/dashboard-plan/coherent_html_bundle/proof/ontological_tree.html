@@ -1,0 +1,1481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Ontological Decision Tree</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-deep: #0a0b0f;
+    --bg-card: #12141c;
+    --bg-card-hover: #181b26;
+    --border-subtle: #1e2233;
+    --border-active: #2a3050;
+    --text-primary: #e8e6e1;
+    --text-secondary: #8a8d9b;
+    --text-dim: #555869;
+    --continues: #2dd4a0;
+    --continues-bg: rgba(45,212,160,0.06);
+    --continues-border: rgba(45,212,160,0.2);
+    --dead: #ef4444;
+    --dead-bg: rgba(239,68,68,0.06);
+    --dead-border: rgba(239,68,68,0.2);
+    --problematic: #f59e0b;
+    --problematic-bg: rgba(245,158,11,0.06);
+    --problematic-border: rgba(245,158,11,0.2);
+    --terminal: #6366f1;
+    --terminal-bg: rgba(99,102,241,0.06);
+    --terminal-border: rgba(99,102,241,0.2);
+    --theophysics: #38bdf8;
+    --secular: #a78bfa;
+    --accent-gold: #d4a853;
+    --trunk-line: #2a3050;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  html {
+    scroll-behavior: smooth;
+    background: var(--bg-deep);
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Subtle grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 0%, rgba(56,189,248,0.03) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 100%, rgba(99,102,241,0.03) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 24px 120px;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    text-align: center;
+    margin-bottom: 60px;
+    padding-bottom: 48px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .header-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--accent-gold);
+    margin-bottom: 20px;
+    opacity: 0;
+    animation: fadeDown 0.6s ease forwards 0.2s;
+  }
+
+  .header h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(36px, 5vw, 56px);
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+    opacity: 0;
+    animation: fadeDown 0.6s ease forwards 0.4s;
+  }
+
+  .header .subtitle {
+    font-size: 16px;
+    color: var(--text-secondary);
+    max-width: 640px;
+    margin: 0 auto;
+    line-height: 1.6;
+    opacity: 0;
+    animation: fadeDown 0.6s ease forwards 0.6s;
+  }
+
+  /* ── LEGEND ── */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px 28px;
+    justify-content: center;
+    margin-bottom: 52px;
+    opacity: 0;
+    animation: fadeDown 0.6s ease forwards 0.8s;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-secondary);
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+
+  /* ── METHODOLOGY BOX ── */
+  .method-box {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 56px;
+    opacity: 0;
+    animation: fadeDown 0.6s ease forwards 1s;
+  }
+
+  .method-box h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--accent-gold);
+    margin-bottom: 20px;
+  }
+
+  .method-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+  }
+
+  .method-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 16px;
+  }
+
+  .method-card .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+
+  .method-card .title {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+  }
+
+  .method-card .desc {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
+  /* ── TRUNK LINE ── */
+  .tree {
+    position: relative;
+    padding-left: 32px;
+  }
+
+  .tree::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--trunk-line), transparent);
+  }
+
+  /* ── LEVEL NODE ── */
+  .level {
+    position: relative;
+    margin-bottom: 48px;
+    opacity: 0;
+    transform: translateY(16px);
+    transition: all 0.5s ease;
+  }
+
+  .level.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Trunk connector dot */
+  .level::before {
+    content: '';
+    position: absolute;
+    left: -25px;
+    top: 24px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--bg-deep);
+    border: 2px solid var(--accent-gold);
+    z-index: 2;
+  }
+
+  .level-header {
+    cursor: pointer;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 24px 28px;
+    transition: all 0.3s ease;
+    user-select: none;
+  }
+
+  .level-header:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--border-active);
+  }
+
+  .level-header.active {
+    border-color: var(--accent-gold);
+    box-shadow: 0 0 40px rgba(212,168,83,0.05);
+  }
+
+  .level-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent-gold);
+    margin-bottom: 10px;
+  }
+
+  .level-tag .qtype {
+    font-size: 9px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: rgba(212,168,83,0.1);
+    color: var(--accent-gold);
+  }
+
+  .level-question {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(22px, 3vw, 30px);
+    font-weight: 600;
+    line-height: 1.3;
+    margin-bottom: 8px;
+  }
+
+  .level-context {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    font-style: italic;
+  }
+
+  .expand-hint {
+    float: right;
+    font-size: 20px;
+    color: var(--text-dim);
+    transition: transform 0.3s ease;
+  }
+
+  .level-header.active .expand-hint {
+    transform: rotate(180deg);
+  }
+
+  /* ── BRANCHES CONTAINER ── */
+  .branches {
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transition: max-height 0.5s ease, opacity 0.4s ease, margin 0.3s ease;
+    margin-top: 0;
+  }
+
+  .branches.open {
+    max-height: 4000px;
+    opacity: 1;
+    margin-top: 16px;
+  }
+
+  .branch {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 12px;
+    border-radius: 10px;
+    padding: 18px 20px;
+    border: 1px solid transparent;
+    transition: all 0.25s ease;
+    position: relative;
+  }
+
+  .branch:hover {
+    transform: translateX(4px);
+  }
+
+  .branch.continues {
+    background: var(--continues-bg);
+    border-color: var(--continues-border);
+  }
+
+  .branch.dead {
+    background: var(--dead-bg);
+    border-color: var(--dead-border);
+  }
+
+  .branch.problematic {
+    background: var(--problematic-bg);
+    border-color: var(--problematic-border);
+  }
+
+  .branch.terminal {
+    background: var(--terminal-bg);
+    border-color: var(--terminal-border);
+  }
+
+  .branch-status {
+    flex-shrink: 0;
+    width: 72px;
+    text-align: center;
+    padding-top: 2px;
+  }
+
+  .status-icon {
+    font-size: 18px;
+    margin-bottom: 4px;
+  }
+
+  .status-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .branch.continues .status-label { color: var(--continues); }
+  .branch.dead .status-label { color: var(--dead); }
+  .branch.problematic .status-label { color: var(--problematic); }
+  .branch.terminal .status-label { color: var(--terminal); }
+
+  .branch-content {
+    flex: 1;
+  }
+
+  .branch-id {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+  }
+
+  .branch-answer {
+    font-weight: 600;
+    font-size: 15px;
+    margin-bottom: 6px;
+  }
+
+  .branch-reason {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  .branch-reason strong {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+
+  .death-type {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+
+  .death-type.self-refute { background: rgba(239,68,68,0.15); color: var(--dead); }
+  .death-type.regress { background: rgba(239,68,68,0.15); color: var(--dead); }
+  .death-type.empirical { background: rgba(239,68,68,0.15); color: var(--dead); }
+  .death-type.incoherent { background: rgba(239,68,68,0.15); color: var(--dead); }
+  .death-type.explanatory { background: rgba(99,102,241,0.15); color: var(--terminal); }
+  .death-type.circular { background: rgba(245,158,11,0.15); color: var(--problematic); }
+
+  /* ── SYSTEM MAPPING ── */
+  .system-map {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .sys-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    line-height: 1.4;
+  }
+
+  .sys-badge.theophysics {
+    background: rgba(56,189,248,0.08);
+    border: 1px solid rgba(56,189,248,0.2);
+    color: var(--theophysics);
+  }
+
+  .sys-badge.secular {
+    background: rgba(167,139,250,0.08);
+    border: 1px solid rgba(167,139,250,0.2);
+    color: var(--secular);
+  }
+
+  /* ── WORLDVIEW TRACKER ── */
+  .worldview-bar {
+    margin-top: 16px;
+    padding: 14px 16px;
+    background: rgba(255,255,255,0.02);
+    border-radius: 8px;
+    border: 1px solid var(--border-subtle);
+  }
+
+  .wv-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+
+  .wv-track {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .wv-pip {
+    width: 28px;
+    height: 8px;
+    border-radius: 2px;
+    transition: all 0.3s ease;
+    position: relative;
+  }
+
+  .wv-pip.alive { background: var(--continues); opacity: 0.7; }
+  .wv-pip.partial { background: var(--problematic); opacity: 0.6; }
+  .wv-pip.dead-wv { background: var(--dead); opacity: 0.4; }
+  .wv-pip.silent { background: var(--text-dim); opacity: 0.2; }
+
+  .wv-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-top: 8px;
+  }
+
+  .wv-count span { font-weight: 600; }
+  .wv-count .alive-n { color: var(--continues); }
+  .wv-count .partial-n { color: var(--problematic); }
+  .wv-count .dead-n { color: var(--dead); }
+
+  /* ── FOUR MODES SIDEBAR ── */
+  .modes-sidebar {
+    margin-top: 16px;
+    padding: 16px;
+    background: rgba(212,168,83,0.04);
+    border: 1px solid rgba(212,168,83,0.15);
+    border-radius: 8px;
+  }
+
+  .modes-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent-gold);
+    margin-bottom: 10px;
+  }
+
+  .modes-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .mode-item {
+    font-size: 12px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border-subtle);
+  }
+
+  .mode-item .mode-name {
+    font-weight: 600;
+    font-size: 11px;
+    margin-bottom: 3px;
+  }
+
+  .mode-item .mode-val {
+    color: var(--text-secondary);
+    font-size: 11px;
+  }
+
+  .mode-item.m1 .mode-name { color: #f87171; }
+  .mode-item.m2 .mode-name { color: #60a5fa; }
+  .mode-item.m3 .mode-name { color: #c084fc; }
+  .mode-item.m4 .mode-name { color: #fbbf24; }
+
+  /* ── HONEST BLANKS ── */
+  .blanks-section {
+    margin-top: 64px;
+    padding-top: 48px;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .blanks-section h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 32px;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .blanks-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  @media (max-width: 700px) {
+    .blanks-grid { grid-template-columns: 1fr; }
+    .modes-grid { grid-template-columns: 1fr; }
+  }
+
+  .blanks-col {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 24px;
+  }
+
+  .blanks-col h3 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .blanks-col.secular-blanks h3 { color: var(--secular); }
+  .blanks-col.theo-blanks h3 { color: var(--theophysics); }
+
+  .blank-item {
+    font-size: 13px;
+    color: var(--text-secondary);
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-subtle);
+    line-height: 1.5;
+  }
+
+  .blank-item:last-child { border-bottom: none; }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-label">Theophysics · Formal Argument Structure</div>
+    <h1>The Ontological Decision Tree</h1>
+    <p class="subtitle">Exhaustive branching from Nothing to God. At every node, ALL possible answers are listed. Each dead branch shows exactly why it dies. Secular physics and Theophysics climb the same tree — they diverge at identifiable nodes.</p>
+  </div>
+
+  <!-- LEGEND -->
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--continues)"></div> Continues</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--dead)"></div> Dead End</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--problematic)"></div> Problematic</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--terminal)"></div> Explanatory Terminal</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--theophysics)"></div> SYS-B (Theophysics)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--secular)"></div> SYS-A (Secular Physics)</div>
+  </div>
+
+  <!-- METHODOLOGY -->
+  <div class="method-box">
+    <h3>Methodology: Four Question Types × Four Death Conditions</h3>
+    <div class="method-grid">
+      <div class="method-card">
+        <div class="label">Question Type 1</div>
+        <div class="title">"Does X hold?"</div>
+        <div class="desc">Binary with escape routes. Branches: Yes / No / Meaningless / Illusory. Max 4 branches.</div>
+      </div>
+      <div class="method-card">
+        <div class="label">Question Type 2</div>
+        <div class="title">"What IS X?"</div>
+        <div class="desc">Ontological identity. Run every philosophical category: material / mental / informational / relational / mathematical / brute / composite.</div>
+      </div>
+      <div class="method-card">
+        <div class="label">Question Type 3</div>
+        <div class="title">"What grounds X?"</div>
+        <div class="desc">Explanatory origin. Branches: nothing (brute) / external (regress risk) / itself (self-grounding) / illusory / necessary.</div>
+      </div>
+      <div class="method-card">
+        <div class="label">Question Type 4</div>
+        <div class="title">"What must X be?"</div>
+        <div class="desc">Constraint derivation. Not branching — deduction. Given survivors, derive necessary properties.</div>
+      </div>
+    </div>
+    <div class="method-grid" style="margin-top:12px;">
+      <div class="method-card">
+        <div class="label">Death Condition</div>
+        <div class="title">Self-Refutation</div>
+        <div class="desc">The claim destroys itself when stated.</div>
+      </div>
+      <div class="method-card">
+        <div class="label">Death Condition</div>
+        <div class="title">Infinite Regress</div>
+        <div class="desc">Answer pushes the question back without resolving it.</div>
+      </div>
+      <div class="method-card">
+        <div class="label">Death Condition</div>
+        <div class="title">Empirical Contradiction</div>
+        <div class="desc">Claim contradicts what we observe.</div>
+      </div>
+      <div class="method-card">
+        <div class="label">Death Condition</div>
+        <div class="title">Logical Incoherence</div>
+        <div class="desc">Claim contradicts something already established in the tree.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- TREE -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="tree" id="tree">
+
+    <!-- ── Q0 ── -->
+    <div class="level" data-level="0">
+      <div class="level-header" onclick="toggleLevel(this)">
+        <span class="expand-hint">▼</span>
+        <div class="level-tag">Level 0 — Bedrock <span class="qtype">Type 1: Does X hold?</span></div>
+        <div class="level-question">Q0: Does anything exist?</div>
+        <div class="level-context">Self-justifying question. The act of asking presupposes a questioner.</div>
+      </div>
+      <div class="branches">
+
+        <div class="branch dead">
+          <div class="branch-status"><div class="status-icon">✕</div><div class="status-label">Dead End</div></div>
+          <div class="branch-content">
+            <div class="branch-id">Q0-A</div>
+            <div class="branch-answer">No, nothing exists.</div>
+            <div class="branch-reason"><span class="death-type self-refute">SELF-REFUTATION</span> The denial requires a denier. To say "nothing exists" is to instantiate a claim, which is something. The proposition destroys itself upon utterance.</div>
+          </div>
+        </div>
+
+        <div class="branch continues">
+          <div class="branch-status"><div class="status-icon">→</div><div class="status-label">Continues</div></div>
+          <div class="branch-content">
+            <div class="branch-id">Q0-B</div>
+            <div class="branch-answer">Yes, something exists.</div>
+            <div class="branch-reason"><strong>Undeniable.</strong> Even radical skeptics (Descartes' cogito) land here. The act of doubting is itself something. Forces Q1.</div>
+          </div>
+        </div>
+
+        <div class="branch dead">
+          <div class="branch-status"><div class="status-icon">✕</div><div class="status-label">Dead End</div></div>
+          <div class="branch-content">
+            <div class="branch-id">Q0-C</div>
+            <div class="branch-answer">The question is meaningless.</div>
+            <div class="branch-reason"><span class="death-type self-refute">SELF-REFUTATION</span> Declaring meaninglessness requires a meaning-bearing entity to declare it. The proposition presupposes what it denies.</div>
+          </div>
+        </div>
+
+        <div class="branch problematic">
+          <div class="branch-status"><div class="status-icon">⚠</div><div class="status-label">Collapses</div></div>
+          <div class="branch-content">
+            <div class="branch-id">Q0-D</div>
+            <div class="branch-answer">Existence is an illusion.</div>
+            <div class="branch-reason"><span class="death-type circular">COLLAPSES → Q0-B</span> An illusion requires something to be illusory <em>for</em>. The illusion itself exists as illusion. Routes back to "something exists."</div>
+          </div>
+        </div>
+
+        <div class="system-map">
+          <div class="sys-badge theophysics">SYS-B: A1.1 — "Something exists rather than nothing."</div>
+          <div class="sys-badge secular">SYS-A: Agrees completely. No divergence.</div>
+        </div>
+
+        <div class="worldview-bar">
+          <div class="wv-label">Worldview Survival — 18 tracked</div>
+          <div class="wv-track">
+            <div class="wv-pip alive" title="Classical Theism"></div>
+            <div class="wv-pip alive" title="Panentheism"></div>
+            <div class="wv-pip alive" title="Deism"></div>
+            <div class="wv-pip alive" title="Idealism"></div>
+            <div class="wv-pip alive" title="Dualism"></div>
+            <div class="wv-pip alive" title="Panpsychism"></div>
+            <div class="wv-pip alive" title="Process"></div>
+            <div class="wv-pip alive" title="Pantheism"></div>
+            <div class="wv-pip alive" title="Materialism"></div>
+            <div class="wv-pip alive" title="Emergentism"></div>
+            <div class="wv-pip alive" title="Naturalism"></div>
+            <div class="wv-pip alive" title="Functionalism"></div>
+            <div class="wv-pip alive" title="Existentialism"></div>
+            <div class="wv-pip alive" title="Hard Determinism"></div>
+            <div class="wv-pip alive" title="Eliminativism"></div>
+            <div class="wv-pip alive" title="Nihilism"></div>
+            <div class="wv-pip partial" title="Buddhism (Partial)"></div>
+            <div class="wv-pip partial" title="Advaita Vedanta (Partial)"></div>
+          </div>
+          <div class="wv-count"><span class="alive-n">16</span> accept · <span class="partial-n">2</span> partial · <span class="dead-n">0</span> eliminated</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Q1 ── -->
+    <div class="level" data-level="1">
+      <div class="level-header" onclick="toggleLevel(this)">
+        <span class="expand-hint">▼</span>
+        <div class="level-tag">Level 1 — Distinction <span class="qtype">Type 1: Does X hold?</span></div>
+        <div class="level-question">Q1: Can that which exists be distinguished from that which does not?</div>
+        <div class="level-context">Forced by Q0-B. If "something" exists, the word implies it is not "nothing." But is the distinction real?</div>
+      </div>
+      <div class="branches">
+
+        <div class="branch dead">
+          <div class="branch-status"><div class="status-icon">✕</div><div class="status-label">Dead End</div></div>
+          <div class="branch-content">
+            <div class="branch-id">Q1-A</div>
+            <div class="branch-answer">No — being and non-being are indistinguishable.</div>
+            <div class="branch-reason"><span class="death-type incoherent">LOGICAL INCOHERENCE</span> Contradicts Q0-B. If existence and non-existence are indistinguishable, "something exists" has no content. You've collapsed your own starting point.</div>
+          </div>
+        </div>
+
+        <div class="branch continues">
+          <div class="branch-status"><div class="status-icon">→</div><div class="status-label">Continues</div></div>
+          <div class="branch-content">
+            <div class="branch-id">Q1-B</div>
+            <div class="branch-answer">Yes — distinction between being and non-being is real.</div>
+            <div class="branch-reason"><strong>This is what "existence" MEANS.</strong> To exist is to be distinguishable from not-existing. Forces Q2.</div>
+          </div>
+        </div>
+
+        <div class="branch problematic">
+          <div class="branch-status"><div class="status-icon">⚠</div><div class="status-label">Costly</div></div>
+          <div class="branch-content">
+            <div class="branch-id">Q1-C</div>
+            <div class="branch-answer">Distinction is real at one level but illusory at another.</div>
+            <div class="branch-reason"><span class="death-type circular">RECURSION</span> Advaita Vedanta lives here: empirical distinction is real, ultimate distinction is illusory. But stating THIS requires distinguishing the two levels — recursion. Carries cost forward.</div>
+          </div>
+        </div>
+
+        <div class="system-map">
+          <div class="sys-badge theophysics">SYS-B: A1.2 — "Existence requires distinguishability."</div>
+          <div class="sys-badge secular">SYS-A: Agrees. Observables are defined by distinguishability.</div>
+        </div>
+
+        <div class="worldview-bar">
+          <div class="wv-label">Worldview Survival</div>
+          <div class="wv-track">
+            <div class="wv-pip alive"></div><div class="wv-pip alive"></div><div class="wv-pip alive"></div>
+            <div class="wv-pip alive"></div><div class="wv-pip alive"></div><div class="wv-pip alive"></div>
+            <div class="wv-pip alive"></div><div class="wv-pip alive"></div><div class="wv-pip alive"></div>
+            <div class="wv-pip alive"></div><div class="wv-pip alive"></div><div class="wv-pip alive"></div>
+            <div class="wv-pip alive"></div><div class="wv-pip alive"></div><div class="wv-pip alive"></div>
+            <div class="wv-pip partial" title="Pantheism"></div>
+            <div class="wv-pip partial" title="Buddhism"></div>
+            <div class="wv-pip dead-wv" title="Advaita Vedanta — rejects ultimate distinction"></div>
+          </div>
+          <div class="wv-count"><span class="alive-n">15</span> accept · <span class="partial-n">2</span> partial · <span class="dead-n">1</span> rejects</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Q2 ── -->
+    <div class="level" data-level="2">
+      <div class="level-header" onclick="toggleLevel(this)">
+        <span class="expand-hint">▼</span>
+        <div class="level-tag">Level 2 — The Information Fork <span class="qtype">Type 2: What IS X?</span></div>
+        <div class="level-question">Q2: What IS a distinction?</div>
+        <div class="level-context">Forced by Q1-B. Distinction is real. What is it, ontologically? This is the first major kill zone — six worldviews die here simultaneously.</div>
+      </div>
+      <div class="branches">
+
+        <div class="branch problematic">
+          <div class="branch-status"><div class="status-icon">⚠</div><div class="status-label">Circular</div></div>
+          <div class="branch-content">
+            <div class="branch-id">Q2-A</div>
+            <div class="branch-answer">A property of matter — physical objects differ.</div>
+            <div class="branch-reason"><span class="death-type circular">CIRCULAR</span> Presupposes matter. We haven't established matter yet. We only have "something exists" + "distinction is real." What IS matter, if not a pattern of distinctions?</div>
+          </div>
+        </div>
+
+        <div class="branch problematic">
+          <div class="branch-status"><div class="status-icon">⚠</div><div class="status-label">Circular</div></div>
+          <div class="branch-content">
+            <div class="branch-id">Q2-B</div>
+            <div class="branch-answer">A property of mind — observers create difference.</div>
+            <div class="branch-reason"><span class="death-type circular">CIRCULAR</span> Presupposes observers. We haven't established consciousness yet. What distinguishes the observer from non-observer?</div>
+          </div>
+        </div>
+
+        <div class="branch continues">
+          <div class="branch-status"><div class="status-icon">→</div><div class="status-label">Continues</div></div>
+          <div class="branch-content">
+            <div class="branch-id">Q2-C</div>
+            <div class="branch-answer">A distinction IS information — the minimum unit of difference is the bit.</div>
+            <div class="branch-reason"><strong>Definitional.</strong> Shannon (1948) formalized exactly this: information = reduction of uncertainty between distinguishable states. One distinction = one bit. No additional primitives needed. Forces Q3.</div>
+          </div>
+        </div>
+
+        <div class="branch dead">
+          <div class="branch-status"><div class="status-icon">✕</div><div class="status-label">Dead End</div></div>
+          <div class="branch-content">
+            <div class="branch-id">Q2-D</div>
+            <div class="branch-answer">A brute, unanalyzable primitive.</div>
+            <div class="branch-reason"><span class="death-type incoherent">COLLAPSES</span> A "brute distinction" carrying no informational content is indistinguishable from no distinction (violates Q1-B). If it DOES carry content, you've restated Q2-C.</div>
+          </div>
+        </div>
+
+        <div class="branch problematic">
+          <div class="branch-status"><div class="status-icon">⚠</div><div class="status-label">Merges</div></div>
+          <div class="branch-content">
+            <div class="branch-id">Q2-E</div>
+            <div class="branch-answer">A mathematical relation.</div>
+            <div class="branch-reason"><span class="death-type circular">VARIANT OF Q2-C</span> Mathematical relations ARE informational structures. This is Q2-C in different language. Not wrong — not independent.</div>
+          </div>
+        </div>
+
+        <div class="branch problematic">
+          <div class="branch-status"><div class="status-icon">⚠</div><div class="status-label">Collapses</div></div>
+          <div class="branch-content">
+            <div class="branch-id">Q2-F</div>
+            <div class="branch-answer">A structural relation (Ontic Structural Realism — Ladyman/French).</div>
+            <div class="branch-reason"><span class="death-type circular">GPT FIX #1</span> "Relations all the way down." But relations between what? If relata eliminated → relations without content → Q2-D (dead). If relata carry content → "structure" = "pattern of distinctions" → Q2-C. Not independent branch.</div>
+          </div>
+        </div>
+
+        <div class="system-map">
+          <div class="sys-badge theophysics">SYS-B: A1.3 — "Distinguishability IS information; information is ontologically primitive."</div>
+          <div class="sys-badge secular">SYS-A: Operates in Q2-A territory. Functional but logically circular at this level.</div>
+        </div>
+
+        <div class="worldview-bar">
+          <div class="wv-label">First Major Kill Zone — 6 worldviews reject A1.3 for the same structural reason</div>
+          <div class="wv-track">
+            <div class="wv-pip alive" title="Classical Theism"></div>
+            <div class="wv-pip alive" title="Panentheism"></div>
+            <div class="wv-pip partial" title="Deism"></div>
+            <div class="wv-pip partial" title="Idealism"></div>
+            <div class="wv-pip partial" title="Dualism"></div>
+            <div class="wv-pip partial" title="Panpsychism"></div>
+            <div class="wv-pip partial" title="Process"></div>
+            <div class="wv-pip partial" title="Pantheism"></div>
+            <div class="wv-pip dead-wv" title="Materialism — REJECTS"></div>
+            <div class="wv-pip dead-wv" title="Emergentism — REJECTS"></div>
+            <div class="wv-pip dead-wv" title="Naturalism — REJECTS"></div>
+            <div class="wv-pip partial" title="Functionalism"></div>
+            <div class="wv-pip partial" title="Existentialism"></div>
+            <div class="wv-pip dead-wv" title="Hard Determinism — REJECTS"></div>
+            <div class="wv-pip dead-wv" title="Eliminativism — REJECTS"></div>
+            <div class="wv-pip dead-wv" title="Nihilism — REJECTS"></div>
+            <div class="wv-pip partial" title="Buddhism"></div>
+            <div class="wv-pip dead-wv" title="Advaita Vedanta"></div>
+          </div>
+          <div class="wv-count"><span class="alive-n">2</span> fully accept · <span class="partial-n">9</span> partial · <span class="dead-n">7</span> reject</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Q3 ── -->
+    <div class="level" data-level="3">
+      <div class="level-header" onclick="toggleLevel(this)">
+        <span class="expand-hint">▼</span>
+        <div class="level-tag">Level 3 — Order <span class="qtype">Type 1: Does X hold?</span></div>
+        <div class="level-question">Q3: Does information require structure, or can it exist as pure randomness?</div>
+        <div class="level-context">Forced by Q2-C. Pure noise = maximum Shannon entropy = zero usable content. Can randomness ground reality?</div>
+      </div>
+      <div class="branches">
+
+        <div class="branch dead">
+          <div class="branch-status"><div class="status-icon">✕</div><div class="status-label">Dead End</div></div>
+          <div class="branch-content">
+            <div class="branch-id">Q3-A</div>
+            <div class="branch-answer">Information can be purely random and still ground reality.</div>
+            <div class="branch-reason"><span class="death-type empirical">EMPIRICAL CONTRADICTION</span> Random information carries no structure. A reality grounded in pure noise has no laws, no regularities, no physics. Contradicts observed reality.</div>
+          </div>
+        </div>
+
+        <div class="branch continues">
+          <div class="branch-status"><div class="status-icon">→</div><div class="status-label">Continues</div></div>
+          <div class="branch-content">
+            <div class="branch-id">Q3-B</div>
+            <div class="branch-answer">Information must have structure — pattern, regularity, compression.</div>
+            <div class="branch-reason"><strong>Both systems agree.</strong> Reality has structure. The question is what EXPLAINS it. Forces Q4.</div>
+          </div>
+        </div>
+
+        <div class="branch problematic">
+          <div class="branch-status"><div class="status-icon">⚠</div><div class="status-label">Deferred</div></div>
+          <div class="branch-content">
+            <div class="branch-id">Q3-C</div>
+            <div class="branch-answer">Structure is observer-imposed, not inherent.</div>
+            <div class="branch-reason"><span class="death-type circular">DEFERRED</span> Presupposes observers again. And for the information itself, it's random until observed → Q3-A. Kicks the can.</div>
+          </div>
+        </div>
+
+        <div class="system-map">
+          <div class="sys-badge theophysics">SYS-B: A3.1 — Order is required. Coherence is built into substrate.</div>
+          <div class="sys-badge secular">SYS-A: Agrees structure exists. Takes it as given — "the laws just are."</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Q4 ── -->
+    <div class="level" data-level="4">
+      <div class="level-header" onclick="toggleLevel(this)">
+        <span class="expand-hint">▼</span>
+        <div class="level-tag">Level 4 — The Great Fork <span class="qtype">Type 3: What grounds X?</span></div>
+        <div class="level-question">Q4: What grounds the structure?</div>
+        <div class="level-context">THE primary divergence point. Secular physics and Theophysics take different branches here. Both are logically valid — but one terminates and one continues.</div>
+      </div>
+      <div class="branches">
+
+        <div class="branch terminal">
+          <div class="branch-status"><div class="status-icon">■</div><div class="status-label">Terminal</div></div>
+          <div class="branch-content">
+            <div class="branch-id">Q4-A</div>
+            <div class="branch-answer">Nothing — the substrate is a brute fact.</div>
+            <div class="branch-reason"><span class="death-type explanatory">EXPLANATORY TERMINAL</span> <strong>This is where secular physics lives. Honestly.</strong> "The laws are what they are." Logically coherent. Epistemically closed. No further questions answerable. Not a contradiction — a boundary. (GPT Fix #2: upgraded from "dead" to "terminal.")</div>
+          </div>
+        </div>
+
+        <div class="branch dead">
+          <div class="branch-status"><div class="status-icon">✕</div><div class="status-label">Dead End</div></div>
+          <div class="branch-content">
+            <div class="branch-id">Q4-B</div>
+            <div class="branch-answer">Another structure grounds it — turtles all the way down.</div>
+            <div class="branch-reason"><span class="death-type regress">INFINITE REGRESS</span> Every "ground" requires a deeper ground. No explanation is ever complete. No foundation ever reached.</div>
+          </div>
+        </div>
+
+        <div class="branch continues">
+          <div class="branch-status"><div class="status-icon">→</div><div class="status-label">Continues</div></div>
+          <div class="branch-content">
+            <div class="branch-id">Q4-C</div>
+            <div class="branch-answer">The substrate grounds itself — self-consistent and self-referencing.</div>
+            <div class="branch-reason"><strong>Self-grounding.</strong> The "why" and the "what" are identical at the deepest level. The system couldn't NOT exist — mathematical necessity. Forces Q5 (property derivation).</div>
+          </div>
+        </div>
+
+        <div class="branch problematic">
+          <div class="branch-status"><div class="status-icon">⚠</div><div class="status-label">Weak</div></div>
+          <div class="branch-content">
+            <div class="branch-id">Q4-D</div>
+            <div class="branch-answer">A multiverse generates all possible substrates — anthropic selection.</div>
+            <div class="branch-reason"><span class="death-type explanatory">UNFALSIFIABLE + REGRESS</span> (a) No observable test distinguishes this from Q4-A. (b) What grounds the multiverse mechanism? Pushes question back. (c) Violates parsimony.</div>
+          </div>
+        </div>
+
+        <div class="branch problematic">
+          <div class="branch-status"><div class="status-icon">⚠</div><div class="status-label">Collapses</div></div>
+          <div class="branch-content">
+            <div class="branch-id">Q4-E</div>
+            <div class="branch-answer">The question is illegitimate — "why" has no answer.</div>
+            <div class="branch-reason"><span class="death-type circular">COLLAPSES → Q4-A</span> Saying "no answer exists" IS accepting brute fact. Same position, philosophical hat.</div>
+          </div>
+        </div>
+
+        <div class="system-map">
+          <div class="sys-badge theophysics">SYS-B: A2.2 — Self-grounding substrate → D2.1 Logos Field χ(x,t)</div>
+          <div class="sys-badge secular">SYS-A: Q4-A. Honest stopping point. Physics describes; it doesn't explain ground.</div>
+        </div>
+
+        <div class="worldview-bar">
+          <div class="wv-label">The Great Fork — Tree splits into two families</div>
+          <div class="wv-track">
+            <div class="wv-pip alive" title="Classical Theism — accepts self-grounding"></div>
+            <div class="wv-pip alive" title="Panentheism"></div>
+            <div class="wv-pip alive" title="Idealism"></div>
+            <div class="wv-pip alive" title="Process"></div>
+            <div class="wv-pip alive" title="Advaita Vedanta"></div>
+            <div class="wv-pip partial" title="Deism"></div>
+            <div class="wv-pip partial" title="Pantheism"></div>
+            <div class="wv-pip dead-wv" title="Materialism — brute fact"></div>
+            <div class="wv-pip dead-wv" title="Emergentism — brute fact"></div>
+            <div class="wv-pip dead-wv" title="Naturalism — brute fact"></div>
+            <div class="wv-pip dead-wv" title="Hard Determinism — brute fact"></div>
+            <div class="wv-pip dead-wv" title="Eliminativism — brute fact"></div>
+            <div class="wv-pip dead-wv" title="Nihilism — brute fact"></div>
+            <div class="wv-pip dead-wv" title="Buddhism — dependent origination denies self-grounding"></div>
+            <div class="wv-pip partial" title="Dualism"></div>
+            <div class="wv-pip partial" title="Panpsychism"></div>
+            <div class="wv-pip partial" title="Functionalism"></div>
+            <div class="wv-pip partial" title="Existentialism"></div>
+          </div>
+          <div class="wv-count"><span class="alive-n">5</span> accept self-grounding · <span class="partial-n">6</span> partial · <span class="dead-n">7</span> at brute fact terminal</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Q5 ── -->
+    <div class="level" data-level="5">
+      <div class="level-header" onclick="toggleLevel(this)">
+        <span class="expand-hint">▼</span>
+        <div class="level-tag">Level 5 — Properties of Ground <span class="qtype">Type 4: What must X be?</span></div>
+        <div class="level-question">Q5: What are the necessary properties of a self-grounding substrate?</div>
+        <div class="level-context">Not branching — deduction. Self-consistency constrains what the ground CAN be. These aren't theological claims. They're logical constraints.</div>
+      </div>
+      <div class="branches">
+
+        <div class="branch continues" style="flex-direction:column;">
+          <div class="branch-content">
+            <div class="branch-id">DERIVED PROPERTIES</div>
+            <div class="branch-reason" style="line-height:2;">
+              <strong>Self-consistent</strong> — A self-contradictory ground destroys itself. (A2.2)<br>
+              <strong>Contains its own explanation</strong> — Incomplete self-reference can't close the loop. Falls to Q4-B.<br>
+              <strong>Non-material</strong> — Specific material config = contingent, not necessary. (G1.3)<br>
+              <strong>Non-temporal</strong> — If ground depends on time, time needs grounding → regress. (G1.2)<br>
+              <strong>Maximally coherent</strong> — Incoherent self-grounding fragments and destroys itself. (A3.1, D3.1)<br>
+              <strong>Non-deceptive</strong> — Deception = maintaining P and ¬P toward subsystems = internal incoherence = coherence failure. Follows from maximal coherence, not self-consistency alone. (G2.4) <em>(GPT Fix #3)</em><br>
+              <strong>Generative</strong> — Must produce the world we observe. Inert ground explains nothing. (D3.3, E3.1)
+            </div>
+          </div>
+        </div>
+
+        <div class="system-map">
+          <div class="sys-badge theophysics">SYS-B: Properties match — universal, eternal, immaterial, coherent, non-deceptive, generative.</div>
+          <div class="sys-badge secular">SYS-A: Cannot derive these. Stopped at Q4-A. No ground to derive from.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Q6 ── -->
+    <div class="level" data-level="6">
+      <div class="level-header" onclick="toggleLevel(this)">
+        <span class="expand-hint">▼</span>
+        <div class="level-tag">Level 6 — Observer Requirement <span class="qtype">Type 1: Does X hold?</span></div>
+        <div class="level-question">Q6: Does the ground require actualization — does information become actual on its own?</div>
+        <div class="level-context">The measurement problem. Potential vs actual. Superposition persists until observation — why?</div>
+      </div>
+      <div class="branches">
+
+        <div class="branch problematic">
+          <div class="branch-status"><div class="status-icon">⚠</div><div class="status-label">Problematic</div></div>
+          <div class="branch-content">
+            <div class="branch-id">Q6-A</div>
+            <div class="branch-answer">Information self-actualizes — no observer needed.</div>
+            <div class="branch-reason"><span class="death-type empirical">CONTRADICTS QM</span> If information self-actualizes, why does superposition exist at all? The measurement problem IS the question of how potential becomes actual.</div>
+          </div>
+        </div>
+
+        <div class="branch continues">
+          <div class="branch-status"><div class="status-icon">→</div><div class="status-label">Continues</div></div>
+          <div class="branch-content">
+            <div class="branch-id">Q6-B</div>
+            <div class="branch-answer">Information requires observation to become actual.</div>
+            <div class="branch-reason"><strong>Participatory universe.</strong> Wheeler's delayed-choice. The Born rule. Potential requires actualization, actualization requires observer. Forces Q7.</div>
+          </div>
+        </div>
+
+        <div class="branch problematic">
+          <div class="branch-status"><div class="status-icon">⚠</div><div class="status-label">Incomplete</div></div>
+          <div class="branch-content">
+            <div class="branch-id">Q6-C</div>
+            <div class="branch-answer">Decoherence handles it — spontaneous collapse.</div>
+            <div class="branch-reason"><span class="death-type circular">INCOMPLETE</span> Explains appearance of collapse, not the thing itself. Wigner's Friend: where does the observer chain end?</div>
+          </div>
+        </div>
+
+        <div class="branch dead">
+          <div class="branch-status"><div class="status-icon">✕</div><div class="status-label">Dead End</div></div>
+          <div class="branch-content">
+            <div class="branch-id">Q6-D</div>
+            <div class="branch-answer">No potential/actual distinction — everything always actual.</div>
+            <div class="branch-reason"><span class="death-type empirical">EMPIRICAL CONTRADICTION</span> Superposition is experimentally verified. Interference patterns require it.</div>
+          </div>
+        </div>
+
+        <div class="system-map">
+          <div class="sys-badge theophysics">SYS-B: A5.1 — Observer required for actualization. A5.2 — Observers participate.</div>
+          <div class="sys-badge secular">SYS-A: Split — Many-Worlds (Q6-A), Copenhagen (Q6-B), Decoherence (Q6-C). No consensus.</div>
+        </div>
+
+        <div class="modes-sidebar">
+          <div class="modes-label">⚡ Four Modes Activate — first finite agent enters the tree</div>
+          <div class="modes-grid">
+            <div class="mode-item m1"><div class="mode-name">M1: Agentic</div><div class="mode-val">Selective attention — observer chooses what to attend to</div></div>
+            <div class="mode-item m2"><div class="mode-name">M2: Entropic</div><div class="mode-val">Finite bandwidth — can't observe everything. Structural blind spots.</div></div>
+            <div class="mode-item m3"><div class="mode-name">M3: Adversarial</div><div class="mode-val">Manipulable perception — adversarial agents can distort inputs</div></div>
+            <div class="mode-item m4"><div class="mode-name">M4: Grace Attenuation</div><div class="mode-val">Clarity depends on coupling to coherence field. Low coupling = distortion.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Q7 ── -->
+    <div class="level" data-level="7">
+      <div class="level-header" onclick="toggleLevel(this)">
+        <span class="expand-hint">▼</span>
+        <div class="level-tag">Level 7 — Terminal Observer <span class="qtype">Type 1: Does X hold?</span></div>
+        <div class="level-question">Q7: Does the observer chain terminate?</div>
+        <div class="level-context">Von Neumann chain: if observers are physical systems needing observation — where does it end?</div>
+      </div>
+      <div class="branches">
+
+        <div class="branch dead">
+          <div class="branch-status"><div class="status-icon">✕</div><div class="status-label">Dead End</div></div>
+          <div class="branch-content">
+            <div class="branch-id">Q7-A</div>
+            <div class="branch-answer">No — infinite chain of observers.</div>
+            <div class="branch-reason"><span class="death-type regress">INFINITE REGRESS</span> Same structure as Q4-B. Nothing ever actually observed.</div>
+          </div>
+        </div>
+
+        <div class="branch continues">
+          <div class="branch-status"><div class="status-icon">→</div><div class="status-label">Continues</div></div>
+          <div class="branch-content">
+            <div class="branch-id">Q7-B</div>
+            <div class="branch-answer">Yes — the chain terminates in a TERMINAL OBSERVER.</div>
+            <div class="branch-reason"><strong>Derived properties:</strong> Always actual (never in superposition). Self-grounding. Infinite observational capacity (Φ = ∞). Non-material. <strong>All four deviation modes = 0.</strong> Forces Q8.</div>
+          </div>
+        </div>
+
+        <div class="branch problematic">
+          <div class="branch-status"><div class="status-icon">⚠</div><div class="status-label">Collapses</div></div>
+          <div class="branch-content">
+            <div class="branch-id">Q7-C</div>
+            <div class="branch-answer">The chain loops — observers observe each other circularly.</div>
+            <div class="branch-reason"><span class="death-type circular">CIRCULAR</span> Who collapses whom first? No bootstrap. Unless always running → self-grounding → routes to Q7-B.</div>
+          </div>
+        </div>
+
+        <div class="branch problematic">
+          <div class="branch-status"><div class="status-icon">⚠</div><div class="status-label">Incomplete</div></div>
+          <div class="branch-content">
+            <div class="branch-id">Q7-D</div>
+            <div class="branch-answer">The chain dissolves — consciousness has no bottom level.</div>
+            <div class="branch-reason"><span class="death-type circular">AVOIDS</span> Functionalism lives here. Doesn't resolve measurement — declares it irrelevant. Superposition remains unexplained.</div>
+          </div>
+        </div>
+
+        <div class="modes-sidebar">
+          <div class="modes-label">Terminal Observer: All Four Modes = Zero</div>
+          <div class="modes-grid">
+            <div class="mode-item m1"><div class="mode-name">M1 = 0</div><div class="mode-val">Permanently aligned (σ = +1)</div></div>
+            <div class="mode-item m2"><div class="mode-name">M2 = 0</div><div class="mode-val">Not finite — Φ = ∞</div></div>
+            <div class="mode-item m3"><div class="mode-name">M3 = 0</div><div class="mode-val">Cannot be deceived — omniscient</div></div>
+            <div class="mode-item m4"><div class="mode-name">M4 = 0</div><div class="mode-val">IS the grace source</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Q8 ── -->
+    <div class="level" data-level="8">
+      <div class="level-header" onclick="toggleLevel(this)">
+        <span class="expand-hint">▼</span>
+        <div class="level-tag">Level 8 — Boundary Conditions <span class="qtype">Type 4: What must X be?</span></div>
+        <div class="level-question">Q8: What boundary conditions must a complete theory satisfy?</div>
+        <div class="level-context">8 necessary conditions derived from the accumulated constraints of Q0–Q7. Not assumptions — consequences.</div>
+      </div>
+      <div class="branches">
+
+        <div class="branch continues" style="flex-direction:column;">
+          <div class="branch-content">
+            <div class="branch-id">8 BOUNDARY CONDITIONS</div>
+            <div class="branch-reason" style="line-height:2.2;">
+              <strong>BC1</strong> Terminal Observer exists (Φ = ∞) — from Q7-B<br>
+              <strong>BC2</strong> Grace external to system — coherence can't self-increase (T3.1)<br>
+              <strong>BC3</strong> Measurement orthogonal to observable — observer independent of observed<br>
+              <strong>BC4</strong> N<sub>observers</sub> = 3 for zero-uncertainty closure — <em>formally pending (honest blank)</em><br>
+              <strong>BC5</strong> Superposition preserved until collapse — free will requires genuine potentiality<br>
+              <strong>BC6</strong> Infinite energy source for entropy defeat — Second Law requirement<br>
+              <strong>BC7</strong> Information conserved through all transformations — unitarity<br>
+              <strong>BC8</strong> Coupling must be voluntary — agent freely accepts or rejects grace
+            </div>
+          </div>
+        </div>
+
+        <div class="modes-sidebar">
+          <div class="modes-label">Each BC addresses specific deviation modes</div>
+          <div class="modes-grid">
+            <div class="mode-item m1"><div class="mode-name">BC5 + BC8</div><div class="mode-val">Enable Mode 1 (genuine choice exists)</div></div>
+            <div class="mode-item m2"><div class="mode-name">BC2 + BC6 + BC7</div><div class="mode-val">Compensate Mode 2 (entropy defeated)</div></div>
+            <div class="mode-item m3"><div class="mode-name">BC3</div><div class="mode-val">Prevents Mode 3 at ground level</div></div>
+            <div class="mode-item m4"><div class="mode-name">BC8</div><div class="mode-val">Creates Mode 4 possibility — conjugate with M1</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Q9 ── -->
+    <div class="level" data-level="9">
+      <div class="level-header" onclick="toggleLevel(this)">
+        <span class="expand-hint">▼</span>
+        <div class="level-tag">Level 9 — The Identification <span class="qtype">Type 2: What IS X?</span></div>
+        <div class="level-question">Q9: What satisfies ALL 8 boundary conditions simultaneously?</div>
+        <div class="level-context">ID7.1 — Terminal Observer = God. Properties derived, not inserted. The identification step is abductive (best fit), not purely deductive. Honest blank #4.</div>
+      </div>
+      <div class="branches">
+
+        <div class="branch continues" style="flex-direction:column;">
+          <div class="branch-content">
+            <div class="branch-id">IDENTIFICATION MAPPING</div>
+            <div class="branch-reason" style="line-height:2.2;">
+              BC1 (Φ = ∞ observer) → <strong>Omniscience</strong><br>
+              BC2 (External grace) → <strong>Grace theology</strong> (Eph 2:8-9)<br>
+              BC3 (Orthogonal measurement) → <strong>Divine transcendence</strong><br>
+              BC4 (N = 3 observers) → <strong>Trinity</strong> (Father, Son, Spirit)<br>
+              BC5 (Superposition until collapse) → <strong>Free will</strong> (Deut 30:19)<br>
+              BC6 (Infinite energy source) → <strong>Omnipotence</strong><br>
+              BC7 (Information conservation) → <strong>Immortal soul, resurrection</strong><br>
+              BC8 (Voluntary coupling) → <strong>"Whoever wills"</strong> (Rev 22:17)
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Q10 ── -->
+    <div class="level" data-level="10">
+      <div class="level-header" onclick="toggleLevel(this)">
+        <span class="expand-hint">▼</span>
+        <div class="level-tag">Level 10 — Sign Structure <span class="qtype">Type 1: Does X hold?</span></div>
+        <div class="level-question">Q10: Can a system change its own moral orientation?</div>
+        <div class="level-context">Given sign structure σ = ±1 — can an agent flip its own sign? This is where grace becomes structurally necessary.</div>
+      </div>
+      <div class="branches">
+
+        <div class="branch dead">
+          <div class="branch-status"><div class="status-icon">✕</div><div class="status-label">Dead End</div></div>
+          <div class="branch-content">
+            <div class="branch-id">Q10-A</div>
+            <div class="branch-answer">Yes — self-improvement can change orientation.</div>
+            <div class="branch-reason"><span class="death-type incoherent">CONTRADICTS T3.1</span> Coherence cannot self-increase in closed system. Self-generated operations commute with sign operator: [σ̂, Û] = 0.</div>
+          </div>
+        </div>
+
+        <div class="branch continues">
+          <div class="branch-status"><div class="status-icon">→</div><div class="status-label">Continues</div></div>
+          <div class="branch-content">
+            <div class="branch-id">Q10-B</div>
+            <div class="branch-answer">No — sign change requires external operator (grace).</div>
+            <div class="branch-reason"><strong>The system cannot flip itself.</strong> An external, non-unitary operator (Ĝ) is required. This IS the grace requirement — C8.2: works salvation impossible.</div>
+          </div>
+        </div>
+
+        <div class="branch dead">
+          <div class="branch-status"><div class="status-icon">✕</div><div class="status-label">Dead End</div></div>
+          <div class="branch-content">
+            <div class="branch-id">Q10-C</div>
+            <div class="branch-answer">No moral orientation exists — the question is meaningless.</div>
+            <div class="branch-reason"><span class="death-type incoherent">CONTRADICTS Q1-B</span> Distinction is real. Moral distinctions are a subclass. Denying them while affirming Q1-B is inconsistent.</div>
+          </div>
+        </div>
+
+        <div class="modes-sidebar">
+          <div class="modes-label">Sign Operator Activates Modes 1 + 4</div>
+          <div class="modes-grid">
+            <div class="mode-item m1"><div class="mode-name">M1: Activates</div><div class="mode-val">Agent can now choose σ → -1</div></div>
+            <div class="mode-item m2"><div class="mode-name">M2: Already present</div><div class="mode-val">Finite Φ under entropy — pre-sign</div></div>
+            <div class="mode-item m3"><div class="mode-name">M3: Already present</div><div class="mode-val">Adversarial agents exist pre-sign</div></div>
+            <div class="mode-item m4"><div class="mode-name">M4: Activates</div><div class="mode-val">Collective σ determines grace coupling V(t)</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Q11 ── -->
+    <div class="level" data-level="11">
+      <div class="level-header" onclick="toggleLevel(this)">
+        <span class="expand-hint">▼</span>
+        <div class="level-tag">Level 11 — Destiny <span class="qtype">Type 3: What grounds X?</span></div>
+        <div class="level-question">Q11: What is the asymptotic fate — where does each trajectory terminate?</div>
+        <div class="level-context">Sign determines basin of attraction. Two-attractor system: integration (Φ → Φ_max) or fragmentation (Φ → 0).</div>
+      </div>
+      <div class="branches">
+
+        <div class="branch dead">
+          <div class="branch-status"><div class="status-icon">✕</div><div class="status-label">Dead End</div></div>
+          <div class="branch-content">
+            <div class="branch-id">Q11-A</div>
+            <div class="branch-answer">All trajectories converge to same end.</div>
+            <div class="branch-reason"><span class="death-type incoherent">CONTRADICTS SIGN</span> If σ = +1 and σ = -1 produce same outcome, sign is meaningless. Violates Q1-B.</div>
+          </div>
+        </div>
+
+        <div class="branch continues">
+          <div class="branch-status"><div class="status-icon">→</div><div class="status-label">Continues</div></div>
+          <div class="branch-content">
+            <div class="branch-id">Q11-B</div>
+            <div class="branch-answer">Two attractors: σ=+1 → integration; σ=-1 → fragmentation.</div>
+            <div class="branch-reason"><strong>dΦ/dt = σ·γ·(Φ_max - Φ)·Φ</strong> — Heaven and hell not as places but as asymptotic states of coherence. Forces Q12.</div>
+          </div>
+        </div>
+
+        <div class="branch problematic">
+          <div class="branch-status"><div class="status-icon">⚠</div><div class="status-label">Costly</div></div>
+          <div class="branch-content">
+            <div class="branch-id">Q11-C</div>
+            <div class="branch-answer">Trajectories oscillate forever — no asymptote.</div>
+            <div class="branch-reason"><span class="death-type circular">ENERGY PROBLEM</span> Requires perpetual energy input to prevent settling. Where does this come from?</div>
+          </div>
+        </div>
+
+        <div class="branch dead">
+          <div class="branch-status"><div class="status-icon">✕</div><div class="status-label">Dead End</div></div>
+          <div class="branch-content">
+            <div class="branch-id">Q11-D</div>
+            <div class="branch-answer">All trajectories terminate in annihilation.</div>
+            <div class="branch-reason"><span class="death-type incoherent">CONTRADICTS BC7</span> Information conservation prevents total annihilation. Something must persist.</div>
+          </div>
+        </div>
+
+        <div class="modes-sidebar">
+          <div class="modes-label">Asymptotic Mode Resolution</div>
+          <div class="modes-grid">
+            <div class="mode-item m1"><div class="mode-name">σ=+1: Resolved</div><div class="mode-val">σ=-1: Locked permanently</div></div>
+            <div class="mode-item m2"><div class="mode-name">σ=+1: Compensated</div><div class="mode-val">σ=-1: Uncompensated, entropy wins</div></div>
+            <div class="mode-item m3"><div class="mode-name">σ=+1: Defeated</div><div class="mode-val">σ=-1: Dominant, feeds on decay</div></div>
+            <div class="mode-item m4"><div class="mode-name">σ=+1: V(t) → 1</div><div class="mode-val">σ=-1: V(t) → 0, full decoupling</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Q12 ── -->
+    <div class="level" data-level="12">
+      <div class="level-header" onclick="toggleLevel(this)">
+        <span class="expand-hint">▼</span>
+        <div class="level-tag">Level 12 — Uniqueness Test <span class="qtype">Type 2: What IS X?</span></div>
+        <div class="level-question">Q12: Which existing system satisfies ALL constraints?</div>
+        <div class="level-context">The accumulated boundary conditions test. 8 BCs × major world systems. Christianity: 8/8. Next closest: 3–5/8.</div>
+      </div>
+      <div class="branches">
+
+        <div class="branch continues" style="flex-direction:column;">
+          <div class="branch-content">
+            <div class="branch-id">BOUNDARY CONDITION SCORECARD</div>
+            <div class="branch-reason" style="font-family:'JetBrains Mono',monospace; font-size:12px; line-height:2.4;">
+              <strong style="color:var(--continues);">Christianity — 8/8</strong>: BC1 ✓ BC2 ✓ BC3 ✓ BC4 ✓ BC5 ✓ BC6 ✓ BC7 ✓ BC8 ✓<br>
+              <strong style="color:var(--problematic);">Islam — 3-5/8</strong>: BC1 ✓ BC2 ⚠ BC3 ✓ BC4 ✗ BC5 ⚠ BC6 ✓ BC7 ⚠ BC8 ⚠<br>
+              <strong style="color:var(--problematic);">Judaism — 4-5/8</strong>: BC1 ✓ BC2 ⚠ BC3 ✓ BC4 ✗ BC5 ✓ BC6 ✓ BC7 ⚠ BC8 ⚠<br>
+              <strong style="color:var(--dead);">Buddhism — 1-2/8</strong>: BC1 ✗ BC2 ✗ BC3 ⚠ BC4 ✗ BC5 ⚠ BC6 ✗ BC7 ✗ BC8 ✓<br>
+              <strong style="color:var(--dead);">Hinduism — 0-3/8</strong>: BC1 ⚠ BC2 ⚠ BC3 ⚠ BC4 ✗ BC5 ⚠ BC6 ⚠ BC7 ⚠ BC8 ⚠<br>
+              <strong style="color:var(--dead);">Atheism — 0/8</strong>: BC1 ✗ BC2 ✗ BC3 ✗ BC4 ✗ BC5 ✗ BC6 ✗ BC7 ✗ BC8 ⚠<br>
+              <strong style="color:var(--text-dim);">Secular Physics — N/A</strong>: Stopped at Q4-A. BCs don't arise.
+            </div>
+          </div>
+        </div>
+
+        <div class="modes-sidebar">
+          <div class="modes-label">Christianity provides distinct remedy for each mode</div>
+          <div class="modes-grid">
+            <div class="mode-item m1"><div class="mode-name">M1 → Repentance + Grace</div><div class="mode-val">Sign flip via external operator</div></div>
+            <div class="mode-item m2"><div class="mode-name">M2 → Resurrection</div><div class="mode-val">Finite Φ → glorified non-entropic body</div></div>
+            <div class="mode-item m3"><div class="mode-name">M3 → Spiritual Armor</div><div class="mode-val">Eph 6 — authority over adversarial agents</div></div>
+            <div class="mode-item m4"><div class="mode-name">M4 → Communion</div><div class="mode-val">Prayer, worship, sacrament = coupling maintenance</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end tree -->
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- HONEST BLANKS -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="blanks-section">
+    <h2>The Honest Blanks</h2>
+    <p style="text-align:center; color:var(--text-secondary); margin-bottom:32px; font-size:14px;">Both systems have gaps. Intellectual honesty requires naming them.</p>
+
+    <div class="blanks-grid">
+      <div class="blanks-col secular-blanks">
+        <h3>Secular Physics Blanks</h3>
+        <div class="blank-item">Why does anything exist? — No answer. Brute fact.</div>
+        <div class="blank-item">Why these laws? — No answer. "Just are."</div>
+        <div class="blank-item">What IS consciousness? — 5 competing interpretations, none complete.</div>
+        <div class="blank-item">Why does superposition collapse? — No consensus.</div>
+        <div class="blank-item">Why does the universe appear designed? — Anthropic principle ≠ explanation.</div>
+        <div class="blank-item">What grounds mathematics? — Open question.</div>
+        <div class="blank-item">Why moral intuition? — Evolution explains existence, not truth.</div>
+      </div>
+
+      <div class="blanks-col theo-blanks">
+        <h3>Theophysics Blanks</h3>
+        <div class="blank-item">BC4: Why exactly 3 observers? — N=3 derivation needs stronger math proof.</div>
+        <div class="blank-item">BC3: How does omniscience avoid collapsing all superpositions? — Orthogonality needs formal resolution.</div>
+        <div class="blank-item">BC2: What distinguishes grace from negentropy? — Both add order. Categorical difference?</div>
+        <div class="blank-item">ID7.1: Gap between derived properties and "God of Christianity" — identification step is abductive, not purely logical.</div>
+        <div class="blank-item">κ ≈ 10⁻⁶⁹: Coupling constant postulated, not derived.</div>
+        <div class="blank-item">Soul-body coupling strength: stipulated, not measured.</div>
+        <div class="blank-item">Fruits of Spirit as coherence markers: plausible but not experimentally validated.</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end container -->
+
+<script>
+  function toggleLevel(header) {
+    const branches = header.nextElementSibling;
+    const isOpen = branches.classList.contains('open');
+
+    // Close all
+    document.querySelectorAll('.branches').forEach(b => b.classList.remove('open'));
+    document.querySelectorAll('.level-header').forEach(h => h.classList.remove('active'));
+
+    if (!isOpen) {
+      branches.classList.add('open');
+      header.classList.add('active');
+    }
+  }
+
+  // Intersection observer for scroll animation
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+  document.querySelectorAll('.level').forEach(level => {
+    observer.observe(level);
+  });
+
+  // Open first level by default
+  setTimeout(() => {
+    const first = document.querySelector('.level-header');
+    if (first) toggleLevel(first);
+  }, 1200);
+</script>
+
+</body>
+</html>

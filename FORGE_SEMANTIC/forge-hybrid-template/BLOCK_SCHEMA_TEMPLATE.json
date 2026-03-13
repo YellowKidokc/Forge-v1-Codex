@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ForgeHybridNodeCard",
+  "type": "object",
+  "required": [
+    "node_id",
+    "title",
+    "scope_level",
+    "status",
+    "derivation",
+    "facets"
+  ],
+  "properties": {
+    "node_id": { "type": "string" },
+    "title": { "type": "string" },
+    "parent_id": { "type": ["string", "null"] },
+    "scope_level": {
+      "type": "string",
+      "enum": ["word", "sentence", "paragraph", "verse", "chapter", "book", "corpus"]
+    },
+    "domain": {
+      "type": "string",
+      "enum": ["bible", "theology", "physics", "law", "general"]
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "reviewed", "canonical", "published", "archived"]
+    },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "freeflow_note": { "type": "string" },
+    "derivation": {
+      "type": "object",
+      "required": ["question_type", "branches", "death_tests", "survivor_status"],
+      "properties": {
+        "question_type": {
+          "type": "string",
+          "enum": ["DOES_X_HOLD", "WHAT_IS_X", "WHAT_GROUNDS_X", "WHAT_MUST_X_BE"]
+        },
+        "branches": { "type": "array", "items": { "type": "string" } },
+        "death_tests": {
+          "type": "object",
+          "properties": {
+            "self_refutation": { "type": "string" },
+            "infinite_regress": { "type": "string" },
+            "logical_incoherence": { "type": "string" },
+            "empirical_contradiction": { "type": "string" }
+          }
+        },
+        "survivor_status": {
+          "type": "string",
+          "enum": ["CONTINUES", "DEAD", "PROBLEMATIC", "TERMINAL"]
+        }
+      }
+    },
+    "facets": {
+      "type": "object",
+      "required": ["entity", "role", "evidence", "time", "ops", "context", "provenance"],
+      "properties": {
+        "entity": { "type": "object" },
+        "role": { "type": "object" },
+        "evidence": { "type": "object" },
+        "time": { "type": "object" },
+        "ops": { "type": "object" },
+        "context": { "type": "object" },
+        "provenance": { "type": "object" }
+      }
+    },
+    "references": { "type": "array", "items": { "type": "string" } },
+    "actions": { "type": "array", "items": { "type": "string" } },
+    "notes": { "type": "array", "items": { "type": "string" } }
+  }
+}

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { X, Plus, ExternalLink, Trash2 } from 'lucide-react';
 import { ForgeSettings, MiniApp, AiRole } from '../lib/types';
 import { providerLabel } from '../lib/ai';
-import { ensureEngineFolder, EngineEntry, getEngines, toggleEngine } from '../lib/engine';
+import { createEngine, ensureEngineFolder, EngineEntry, getEngines, toggleEngine } from '../lib/engine';
 
 interface SettingsPageProps {
   open: boolean;
@@ -30,6 +30,8 @@ const SettingsPage = ({
   const [appUrl, setAppUrl] = useState('');
   const [engines, setEngines] = useState<EngineEntry[]>([]);
   const [engineError, setEngineError] = useState<string | null>(null);
+  const [newEngineName, setNewEngineName] = useState('');
+  const [newEngineFile, setNewEngineFile] = useState('');
 
   const autosaveSeconds = useMemo(
     () => Math.max(0.5, settings.autosaveDelayMs / 1000),
@@ -249,6 +251,36 @@ const SettingsPage = ({
             {engineError && <p className="text-[11px] text-red-400">{engineError}</p>}
             {activeNotebookPath && engines.length === 0 && !engineError && (
               <p className="text-[11px] text-gray-600">No engine YAML files found yet.</p>
+            )}
+            {activeNotebookPath && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                <input
+                  value={newEngineName}
+                  onChange={(event) => setNewEngineName(event.target.value)}
+                  placeholder="Engine name"
+                  className="bg-black/30 border border-forge-steel rounded px-2 py-1.5 text-xs text-white outline-none focus:border-forge-ember/50"
+                />
+                <input
+                  value={newEngineFile}
+                  onChange={(event) => setNewEngineFile(event.target.value)}
+                  placeholder="file (e.g. tts_engine)"
+                  className="bg-black/30 border border-forge-steel rounded px-2 py-1.5 text-xs text-white outline-none focus:border-forge-ember/50"
+                />
+                <button
+                  onClick={async () => {
+                    const name = newEngineName.trim();
+                    const file = newEngineFile.trim();
+                    if (!name || !file) return;
+                    await createEngine(file, name, 'manual', false);
+                    setEngines(await getEngines());
+                    setNewEngineName('');
+                    setNewEngineFile('');
+                  }}
+                  className="text-xs px-2 py-1 rounded border border-forge-ember/40 text-forge-ember hover:text-white cursor-pointer"
+                >
+                  Create engine
+                </button>
+              </div>
             )}
             <div className="space-y-1">
               {engines.map((engine) => (

@@ -16,6 +16,10 @@ export async function getEngines(): Promise<EngineEntry[]> {
   return invoke<EngineEntry[]>('get_engines');
 }
 
+export async function createEngine(file: string, name: string, trigger: string, enabled = false): Promise<string> {
+  return invoke<string>('create_engine', { file, name, trigger, enabled });
+}
+
 export async function toggleEngine(file: string, enabled: boolean): Promise<void> {
   return invoke('toggle_engine', { file, enabled });
 }

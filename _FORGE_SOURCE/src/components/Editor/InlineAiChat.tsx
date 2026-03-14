@@ -13,6 +13,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Editor } from '@tiptap/core';
 import { UseGridReturn } from '../../hooks/useGrid';
+import { cacheInstruction, getInstructionCache } from '../../lib/instructionCache';
+import { addCanonicalAnchor, addDisplayRule, addExpansionMacro } from '../../lib/annotations';
 
 interface InlineAiChatProps {
   editor: Editor | null;
@@ -31,13 +33,6 @@ export interface InlineContext {
   surroundingText: string;
   tags: string[];
   flags: string[];
-}
-
-interface CachedInstruction {
-  instruction: string;
-  pattern: string;    // what to match in future
-  action: string;     // what to do when matched
-  timestamp: number;
 }
 
 function getSelectionContext(editor: Editor, grid: UseGridReturn): InlineContext {
@@ -100,6 +95,7 @@ export default function InlineAiChat({ editor, grid, onExecute, onClose }: Inlin
   const [error, setError] = useState<string | null>(null);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [context, setContext] = useState<InlineContext | null>(null);
+  const [cachedCount, setCachedCount] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const bubbleRef = useRef<HTMLDivElement>(null);
 
@@ -137,6 +133,8 @@ export default function InlineAiChat({ editor, grid, onExecute, onClose }: Inlin
 
     try {
       const response = await onExecute(instruction, context);
+      cacheInstruction(instruction, context);
+      setCachedCount(getInstructionCache().length);
       setResult(response);
       
       // If the instruction looks like it should replace the selection, do it
@@ -170,6 +168,10 @@ export default function InlineAiChat({ editor, grid, onExecute, onClose }: Inlin
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
   }, [onClose]);
+
+  useEffect(() => {
+    setCachedCount(getInstructionCache().length);
+  }, []);
 
   // Close on click outside
   useEffect(() => {
@@ -207,6 +209,7 @@ export default function InlineAiChat({ editor, grid, onExecute, onClose }: Inlin
               {context.flags.join(', ')}
             </span>
           )}
+          {cachedCount > 0 && <span className="ml-auto text-gray-500">cache:{cachedCount}</span>}
         </div>
         <div className="text-[10px] text-gray-500 mt-0.5 truncate max-w-full">
           "{context.selectedText.substring(0, 60)}
@@ -251,13 +254,38 @@ export default function InlineAiChat({ editor, grid, onExecute, onClose }: Inlin
                   const tag = prompt('Tag name:');
                   if (tag && context.gridRow !== null && context.gridCol !== null) {
                     grid.addTag(context.gridRow, context.gridCol, tag);
+                    addDisplayRule({
+                      trigger: context.selectedText || tag,
+                      color: '#e8a912',
+                      shape: 'background',
+                      opacity: 0.25,
+                      scope: 'local',
+                    });
                     onClose?.();
                   }
                 } else if (action === 'Flag row') {
                   const flag = prompt('Flag (e.g., load-bearing, axiom):');
                   if (flag && context.gridRow !== null) {
                     grid.setFlag(context.gridRow, flag);
+                    addCanonicalAnchor({
+                      label: flag,
+                      text: context.selectedText,
+                      grain: 'selection',
+                      scope: 'local',
+                      locked: false,
+                    });
                     onClose?.();
+                  }
+                } else if (action === 'Link to...') {
+                  const macro = prompt('Macro shorthand (example LOW1):');
+                  if (macro) {
+                    addExpansionMacro({
+                      abbreviation: macro,
+                      expansion: context.selectedText,
+                      scope: 'local',
+                    });
+                    setInstruction(`Link "${context.selectedText}" to ${macro}`);
+                    inputRef.current?.focus();
                   }
                 } else {
                   setInstruction(action + ': ');

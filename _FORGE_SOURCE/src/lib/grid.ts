@@ -52,6 +52,8 @@ export interface GridQueryResult {
   rows: GridRow[];
 }
 
+export type GridQueryPredicate = (cell: GridCell, row: GridRow) => boolean;
+
 export interface GridSnapshot {
   rows: GridRow[];
   version: number;        // incremented on every rebuild
@@ -259,6 +261,16 @@ export function queryByText(grid: GridSnapshot, search: string): GridCell[] {
   for (const row of grid.rows) {
     for (const cell of row.cells) {
       if (cell.word.toLowerCase().includes(lower)) results.push(cell);
+    }
+  }
+  return results;
+}
+
+export function queryGrid(grid: GridSnapshot, predicate: GridQueryPredicate): GridCell[] {
+  const results: GridCell[] = [];
+  for (const row of grid.rows) {
+    for (const cell of row.cells) {
+      if (predicate(cell, row)) results.push(cell);
     }
   }
   return results;

@@ -13,6 +13,7 @@ interface BottomBarProps {
   onOpenAi: () => void;
   onOpenLogicSheet: () => void;
   onOpenTruthLayer: () => void;
+  onOpenDataMirror: () => void;
   miniApps: MiniApp[];
 }
 
@@ -28,6 +29,7 @@ const BottomBar = ({
   onOpenAi,
   onOpenLogicSheet,
   onOpenTruthLayer,
+  onOpenDataMirror,
   miniApps,
 }: BottomBarProps) => {
   const [prompt, setPrompt] = useState('');
@@ -93,6 +95,10 @@ const BottomBar = ({
             <button onClick={onOpenTruthLayer}
               className="text-[10px] px-2 py-1 rounded border border-forge-steel text-gray-300 hover:text-forge-ember whitespace-nowrap cursor-pointer flex items-center gap-1">
               <ShieldCheck size={11} /> Forge Layer
+            </button>
+            <button onClick={onOpenDataMirror}
+              className="text-[10px] px-2 py-1 rounded border border-forge-steel text-gray-300 hover:text-forge-ember whitespace-nowrap cursor-pointer flex items-center gap-1">
+              <Table2 size={11} /> Data Mirror
             </button>
             {miniApps.map((app) => (
               <button key={app.id} onClick={() => void onSubmitPrompt(`/app ${app.id}`)}

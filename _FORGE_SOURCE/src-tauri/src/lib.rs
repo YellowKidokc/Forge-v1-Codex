@@ -27,6 +27,15 @@ struct PythonSidecarRequest {
     model: Option<String>,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
+struct EngineEntry {
+    id: String,
+    name: String,
+    file: String,
+    enabled: bool,
+    trigger: String,
+}
+
 // ─── App State ───────────────────────────────────────────────────
 
 struct AppState {
@@ -44,6 +53,11 @@ async fn set_vault(path: String, state: State<'_, AppState>) -> Result<String, S
     }
     let mut vault = state.vault_path.lock().await;
     *vault = Some(path.clone());
+
+    // Ensure required vault infrastructure exists.
+    let _ = ensure_mirror_root(&p);
+    let _ = ensure_engine_root(&p);
+
     Ok(format!("Vault set: {}", path))
 }
 
@@ -110,6 +124,102 @@ fn is_ignored_folder(name: &str) -> bool {
         || name == "target"
         || name == "__pycache__"
         || name == ".obsidian"
+}
+
+fn ensure_mirror_root(vault_root: &Path) -> Result<PathBuf, String> {
+    let mirror_root = vault_root.join("_data");
+    fs::create_dir_all(&mirror_root).map_err(|e| e.to_string())?;
+    Ok(mirror_root)
+}
+
+fn ensure_engine_root(vault_root: &Path) -> Result<PathBuf, String> {
+    let engine_root = vault_root.join("_engines");
+    fs::create_dir_all(&engine_root).map_err(|e| e.to_string())?;
+    Ok(engine_root)
+}
+
+fn mirror_scan_directory(path: &PathBuf, depth: usize, max_depth: usize) -> Result<Vec<FileEntry>, std::io::Error> {
+    if depth >= max_depth {
+        return Ok(vec![]);
+    }
+
+    let mut entries = Vec::new();
+    for entry in fs::read_dir(path)? {
+        let entry = entry?;
+        let name = entry.file_name().to_string_lossy().to_string();
+        let file_path = entry.path();
+        let is_dir = file_path.is_dir();
+
+        if is_dir {
+            let children = mirror_scan_directory(&file_path, depth + 1, max_depth)?;
+            entries.push(FileEntry {
+                name,
+                path: file_path.to_string_lossy().to_string(),
+                is_dir: true,
+                children: if children.is_empty() { None } else { Some(children) },
+            });
+        } else {
+            entries.push(FileEntry {
+                name,
+                path: file_path.to_string_lossy().to_string(),
+                is_dir: false,
+                children: None,
+            });
+        }
+    }
+
+    entries.sort_by(|a, b| match (a.is_dir, b.is_dir) {
+        (true, false) => std::cmp::Ordering::Less,
+        (false, true) => std::cmp::Ordering::Greater,
+        _ => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
+    });
+
+    Ok(entries)
+}
+
+fn extract_engine_field(content: &str, key: &str) -> Option<String> {
+    let prefix = format!("{}:", key);
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if !trimmed.starts_with(&prefix) {
+            continue;
+        }
+
+        let value = trimmed[prefix.len()..].trim().trim_matches('"').trim_matches('\'');
+        if !value.is_empty() {
+            return Some(value.to_string());
+        }
+    }
+    None
+}
+
+fn parse_engine_entry(path: &PathBuf) -> Result<EngineEntry, String> {
+    let content = fs::read_to_string(path).map_err(|e| e.to_string())?;
+    let file_name = path
+        .file_name()
+        .and_then(|s| s.to_str())
+        .unwrap_or_default()
+        .to_string();
+
+    let stem = path
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("engine")
+        .to_string();
+
+    let name = extract_engine_field(&content, "name").unwrap_or_else(|| stem.clone());
+    let enabled = extract_engine_field(&content, "enabled")
+        .map(|v| v.eq_ignore_ascii_case("true"))
+        .unwrap_or(false);
+    let trigger = extract_engine_field(&content, "trigger").unwrap_or_else(|| "manual".to_string());
+
+    Ok(EngineEntry {
+        id: stem,
+        name,
+        file: file_name,
+        enabled,
+        trigger,
+    })
 }
 
 fn sanitize_note_segment(segment: &str) -> String {
@@ -292,6 +402,109 @@ async fn delete_item(path: String) -> Result<(), String> {
     }
 }
 
+#[tauri::command]
+async fn create_mirror(state: State<'_, AppState>) -> Result<String, String> {
+    let vault = state.vault_path.lock().await;
+    let vault_path = vault.as_ref().ok_or("No vault selected")?;
+    let mirror_path = ensure_mirror_root(Path::new(vault_path))?;
+    Ok(mirror_path.to_string_lossy().to_string())
+}
+
+#[tauri::command]
+async fn get_mirror_files(state: State<'_, AppState>) -> Result<Vec<FileEntry>, String> {
+    let vault = state.vault_path.lock().await;
+    let vault_path = vault.as_ref().ok_or("No vault selected")?;
+    let mirror_path = ensure_mirror_root(Path::new(vault_path))?;
+    mirror_scan_directory(&mirror_path, 0, 7).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn write_mirror_file(relative_path: String, content: String, state: State<'_, AppState>) -> Result<String, String> {
+    let vault = state.vault_path.lock().await;
+    let vault_path = vault.as_ref().ok_or("No vault selected")?;
+
+    let mirror_root = ensure_mirror_root(Path::new(vault_path))?;
+    let normalized = relative_path.replace('\\', "/");
+    let sanitized = normalized.trim_start_matches('/');
+
+    if sanitized.is_empty() {
+        return Err("Mirror relative path cannot be empty".to_string());
+    }
+
+    let full = mirror_root.join(sanitized);
+    if let Some(parent) = full.parent() {
+        fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+    fs::write(&full, content).map_err(|e| e.to_string())?;
+    Ok(full.to_string_lossy().to_string())
+}
+
+#[tauri::command]
+async fn ensure_engine_folder(state: State<'_, AppState>) -> Result<String, String> {
+    let vault = state.vault_path.lock().await;
+    let vault_path = vault.as_ref().ok_or("No vault selected")?;
+    let engine_root = ensure_engine_root(Path::new(vault_path))?;
+    Ok(engine_root.to_string_lossy().to_string())
+}
+
+#[tauri::command]
+async fn get_engines(state: State<'_, AppState>) -> Result<Vec<EngineEntry>, String> {
+    let vault = state.vault_path.lock().await;
+    let vault_path = vault.as_ref().ok_or("No vault selected")?;
+    let engine_root = ensure_engine_root(Path::new(vault_path))?;
+
+    let mut result = Vec::new();
+    for entry in fs::read_dir(engine_root).map_err(|e| e.to_string())? {
+        let entry = entry.map_err(|e| e.to_string())?;
+        let path = entry.path();
+        if !path.is_file() {
+            continue;
+        }
+
+        let ext = path.extension().and_then(|s| s.to_str()).unwrap_or_default().to_lowercase();
+        if ext != "yaml" && ext != "yml" {
+            continue;
+        }
+
+        result.push(parse_engine_entry(&path)?);
+    }
+
+    result.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+    Ok(result)
+}
+
+#[tauri::command]
+async fn toggle_engine(file: String, enabled: bool, state: State<'_, AppState>) -> Result<(), String> {
+    let vault = state.vault_path.lock().await;
+    let vault_path = vault.as_ref().ok_or("No vault selected")?;
+    let engine_root = ensure_engine_root(Path::new(vault_path))?;
+    let path = engine_root.join(file);
+
+    if !path.exists() {
+        return Err("Engine file not found".to_string());
+    }
+
+    let existing = fs::read_to_string(&path).map_err(|e| e.to_string())?;
+    let mut changed = false;
+    let mut lines = Vec::new();
+
+    for line in existing.lines() {
+        if line.trim_start().starts_with("enabled:") {
+            lines.push(format!("enabled: {}", enabled));
+            changed = true;
+        } else {
+            lines.push(line.to_string());
+        }
+    }
+
+    if !changed {
+        lines.push(format!("enabled: {}", enabled));
+    }
+
+    fs::write(path, lines.join("\n")).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
 // ─── Database Commands ───────────────────────────────────────────
 
 #[tauri::command]
@@ -409,6 +622,12 @@ pub fn run() {
             open_or_create_note_by_title,
             rename_item,
             delete_item,
+            create_mirror,
+            get_mirror_files,
+            write_mirror_file,
+            ensure_engine_folder,
+            get_engines,
+            toggle_engine,
             run_python_sidecar,
         ])
         .run(tauri::generate_context!())

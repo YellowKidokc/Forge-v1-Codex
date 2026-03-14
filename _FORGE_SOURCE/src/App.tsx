@@ -9,6 +9,7 @@ import NodeSidePanel from './components/NodeSidePanel';
 import SettingsPage from './components/SettingsPage';
 import LogicSheet from './components/miniapps/LogicSheet';
 import TruthLayerWorkbench from './components/miniapps/TruthLayerWorkbench';
+import MirrorView from './components/DataMirror/MirrorView';
 import { FileEntry, NoteMetadata, SavedNotebook, ForgeSettings, MiniApp } from './lib/types';
 // TopCommandBar replaced by BottomBar — do not re-import
 import { DEFAULT_SETTINGS, parseSettings, SETTINGS_STORAGE_KEY } from './lib/settings';
@@ -21,7 +22,7 @@ const ACTIVE_NOTEBOOK_STORAGE_KEY = 'forge_active_notebook_v1';
 
 const EMPTY_METADATA: NoteMetadata = { tags: [], links: [] };
 
-type CenterView = 'editor' | 'logic_sheet' | 'truth_layer';
+type CenterView = 'editor' | 'logic_sheet' | 'truth_layer' | 'data_mirror';
 type PromptMode = 'interface' | 'logic' | 'copilot';
 
 interface PromptPacket {
@@ -422,6 +423,11 @@ function App() {
         return true;
       }
 
+      if (command === 'data' || command === 'mirror') {
+        setCenterView('data_mirror');
+        return true;
+      }
+
       if (command === 'ai') {
         if (!argument) {
           setAiPanelOpen(true);
@@ -499,6 +505,8 @@ function App() {
             <LogicSheet open />
           ) : centerView === 'truth_layer' ? (
             <TruthLayerWorkbench open />
+          ) : centerView === 'data_mirror' ? (
+            <MirrorView activeNotebookPath={activeNotebookPath} />
           ) : (
             <>
               <ForgeEditor
@@ -529,6 +537,7 @@ function App() {
           onOpenAi={() => setAiPanelOpen(true)}
           onOpenLogicSheet={() => setCenterView('logic_sheet')}
           onOpenTruthLayer={() => setCenterView('truth_layer')}
+          onOpenDataMirror={() => setCenterView('data_mirror')}
           miniApps={settings.miniApps}
         />
       </div>
@@ -571,10 +580,10 @@ function App() {
         onUpdateSettings={setSettings}
         onClose={() => setSettingsOpen(false)}
         onLaunchMiniApp={launchMiniApp}
+        activeNotebookPath={activeNotebookPath}
       />
     </div>
   );
 }
 
 export default App;
-

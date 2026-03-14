@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { X, Plus, ExternalLink, Trash2 } from 'lucide-react';
 import { ForgeSettings, MiniApp, AiRole } from '../lib/types';
 import { providerLabel } from '../lib/ai';
+import { ensureEngineFolder, EngineEntry, getEngines, toggleEngine } from '../lib/engine';
 
 interface SettingsPageProps {
   open: boolean;
@@ -9,6 +10,7 @@ interface SettingsPageProps {
   onUpdateSettings: (next: ForgeSettings) => void;
   onClose: () => void;
   onLaunchMiniApp: (app: MiniApp) => void;
+  activeNotebookPath: string | null;
 }
 
 function createMiniAppId(name: string): string {
@@ -22,15 +24,32 @@ const SettingsPage = ({
   onUpdateSettings,
   onClose,
   onLaunchMiniApp,
+  activeNotebookPath,
 }: SettingsPageProps) => {
   const [appName, setAppName] = useState('');
   const [appUrl, setAppUrl] = useState('');
+  const [engines, setEngines] = useState<EngineEntry[]>([]);
+  const [engineError, setEngineError] = useState<string | null>(null);
 
   const autosaveSeconds = useMemo(
     () => Math.max(0.5, settings.autosaveDelayMs / 1000),
     [settings.autosaveDelayMs]
   );
   const roleOrder: AiRole[] = ['interface', 'logic', 'copilot'];
+
+  useEffect(() => {
+    const load = async () => {
+      if (!open || !activeNotebookPath) return;
+      try {
+        setEngineError(null);
+        await ensureEngineFolder();
+        setEngines(await getEngines());
+      } catch (error: any) {
+        setEngineError(error?.message ?? 'Failed to load engines');
+      }
+    };
+    load();
+  }, [open, activeNotebookPath]);
 
   if (!open) return null;
 
@@ -219,6 +238,36 @@ const SettingsPage = ({
                 }
               />
             </label>
+          </section>
+
+          <section className="space-y-3 border border-forge-steel rounded p-3">
+            <h3 className="text-xs uppercase tracking-widest text-gray-400">Global Engines (YAML)</h3>
+            <p className="text-[11px] text-gray-500">
+              Engines are loaded from <code>_engines/</code> in the active notebook.
+            </p>
+            {!activeNotebookPath && <p className="text-[11px] text-gray-600">Select a notebook to view engines.</p>}
+            {engineError && <p className="text-[11px] text-red-400">{engineError}</p>}
+            {activeNotebookPath && engines.length === 0 && !engineError && (
+              <p className="text-[11px] text-gray-600">No engine YAML files found yet.</p>
+            )}
+            <div className="space-y-1">
+              {engines.map((engine) => (
+                <label key={engine.id} className="flex items-center justify-between gap-2 border border-forge-steel rounded px-2 py-1">
+                  <div className="min-w-0">
+                    <div className="text-xs text-gray-200 truncate">{engine.name}</div>
+                    <div className="text-[10px] text-gray-600">{engine.file} · trigger:{engine.trigger}</div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={engine.enabled}
+                    onChange={async (event) => {
+                      await toggleEngine(engine.file, event.target.checked);
+                      setEngines(await getEngines());
+                    }}
+                  />
+                </label>
+              ))}
+            </div>
           </section>
 
           <section className="space-y-3 border border-forge-steel rounded p-3">

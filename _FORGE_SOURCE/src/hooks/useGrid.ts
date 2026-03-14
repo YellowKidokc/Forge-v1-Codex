@@ -17,7 +17,7 @@ import {
   buildGrid, getCell as _getCell, getRow as _getRow,
   getCellRange as _getCellRange,
   queryByTag as _queryByTag, queryByFlag as _queryByFlag,
-  queryByText as _queryByText,
+  queryByText as _queryByText, queryGrid as _queryGrid,
   setCellMeta, setRowMeta, addTagToCell, addFlagToRow, removeFlagFromRow,
   serializeGridMeta, deserializeGridMeta,
   CellMeta,
@@ -31,6 +31,7 @@ export function useGrid(editor: Editor | null) {
   const [grid, setGrid] = useState<GridSnapshot>(EMPTY_GRID);
   const rebuildTimerRef = useRef<number | null>(null);
   const metaStoreRef = useRef<string>(''); // serialized metadata to preserve across rebuilds
+  const subscribersRef = useRef(new Map<string, Set<(cell: GridCell | null) => void>>());
 
   // Rebuild grid from editor document (debounced)
   const rebuildGrid = useCallback(() => {
@@ -74,6 +75,12 @@ export function useGrid(editor: Editor | null) {
     if (grid.totalRows > 0) {
       metaStoreRef.current = serializeGridMeta(grid);
     }
+
+    subscribersRef.current.forEach((callbacks: Set<(cell: GridCell | null) => void>, key: string) => {
+      const [rowText, colText] = key.split(':');
+      const cell = _getCell(grid, Number(rowText), Number(colText));
+      callbacks.forEach((callback: (cell: GridCell | null) => void) => callback(cell));
+    });
   }, [grid]);
 
   // ── Query API ──
@@ -99,6 +106,10 @@ export function useGrid(editor: Editor | null) {
 
   const queryByText = useCallback((search: string): GridCell[] => {
     return _queryByText(grid, search);
+  }, [grid]);
+
+  const query = useCallback((predicate: (cell: GridCell, row: GridRow) => boolean): GridCell[] => {
+    return _queryGrid(grid, predicate);
   }, [grid]);
 
   // ── Mutation API ──
@@ -165,6 +176,30 @@ export function useGrid(editor: Editor | null) {
     }
   }, [editor, grid]);
 
+  const setCell = useCallback((row: number, col: number, value: string) => {
+    if (!editor) return false;
+    const cell = _getCell(grid, row, col);
+    if (!cell) return false;
+    editor.chain().focus().setTextSelection({ from: cell.from, to: cell.to }).insertContent(value).run();
+    setTimeout(rebuildGrid, 0);
+    return true;
+  }, [editor, grid, rebuildGrid]);
+
+  const subscribe = useCallback((row: number, col: number, callback: (cell: GridCell | null) => void) => {
+    const key = `${row}:${col}`;
+    const map = subscribersRef.current;
+    const existing = map.get(key) ?? new Set<(cell: GridCell | null) => void>();
+    existing.add(callback);
+    map.set(key, existing);
+    callback(_getCell(grid, row, col));
+    return () => {
+      const entry = map.get(key);
+      if (!entry) return;
+      entry.delete(callback);
+      if (entry.size === 0) map.delete(key);
+    };
+  }, [grid]);
+
   return {
     snapshot: grid,
     getCell,
@@ -173,6 +208,7 @@ export function useGrid(editor: Editor | null) {
     queryByTag,
     queryByFlag,
     queryByText,
+    query,
     addTag,
     setFlag,
     removeFlag,
@@ -180,6 +216,8 @@ export function useGrid(editor: Editor | null) {
     updateRowMeta,
     highlightCell,
     highlightRow,
+    setCell,
+    subscribe,
     rebuild: rebuildGrid,
   };
 }

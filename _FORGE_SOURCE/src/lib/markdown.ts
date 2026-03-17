@@ -17,10 +17,15 @@ function escapeHtml(text: string): string {
 }
 
 function processInline(text: string): string {
-  return text
+  const escaped = escapeHtml(text);
+  return escaped
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
     .replace(/`(.+?)`/g, '<code>$1</code>');
+}
+
+function escapeAttribute(text: string): string {
+  return escapeHtml(text).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 export function markdownToHtml(md: string): string {
@@ -47,7 +52,7 @@ export function markdownToHtml(md: string): string {
         i++;
       }
       i++; // skip closing ```
-      blocks.push(`<pre><code${lang ? ` class="language-${lang}"` : ''}>${codeLines.join('\n')}</code></pre>`);
+      blocks.push(`<pre><code${lang ? ` class="language-${escapeAttribute(lang)}"` : ''}>${codeLines.join('\n')}</code></pre>`);
       continue;
     }
 

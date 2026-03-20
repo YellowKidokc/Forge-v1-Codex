@@ -113,7 +113,6 @@ function emptyMeta(): CellMeta {
 
 export function buildGrid(doc: any): GridSnapshot {
   const rows: GridRow[] = [];
-  let rowIndex = 0;
   let totalCells = 0;
 
   // ProseMirror docs have a top-level 'doc' node with content children
@@ -121,27 +120,14 @@ export function buildGrid(doc: any): GridSnapshot {
     return { rows: [], version: 0, timestamp: Date.now(), totalRows: 0, totalCells: 0 };
   }
 
-  // Walk top-level block nodes
-  doc.content.forEach((node: any, _nodeIndex: number, offset: number) => {
-    const row = buildRowFromNode(node, rowIndex, offset);
-    if (row) {
-      rows.push(row);
-      totalCells += row.cells.length;
-      rowIndex++;
-    }
+  const appendRow = (node: any, nodeStart: number) => {
+    const row = buildRowFromNode(node, rows.length, nodeStart);
+    if (!row) return;
+    rows.push(row);
+    totalCells += row.cells.length;
+  };
 
-    // Handle nested content (lists, blockquotes)
-    if (node.content && hasNestedBlocks(node)) {
-      node.content.forEach((child: any, _ci: number, childOffset: number) => {
-        const childRow = buildRowFromNode(child, rowIndex, childOffset);
-        if (childRow) {
-          rows.push(childRow);
-          totalCells += childRow.cells.length;
-          rowIndex++;
-        }
-      });
-    }
-  });
+  walkGridNodes(doc, 0, appendRow);
 
   return {
     rows,
@@ -150,11 +136,6 @@ export function buildGrid(doc: any): GridSnapshot {
     totalRows: rows.length,
     totalCells,
   };
-}
-
-function hasNestedBlocks(node: any): boolean {
-  const nested = ['bulletList', 'orderedList', 'blockquote', 'taskList'];
-  return nested.includes(node.type?.name || node.type);
 }
 
 function buildRowFromNode(node: any, rowIndex: number, nodeStart: number): GridRow | null {
@@ -190,7 +171,7 @@ function buildRowFromNode(node: any, rowIndex: number, nodeStart: number): GridR
     nodeType: typeName,
     level: node.attrs?.level,
     from: nodeStart,
-    to: nodeStart + (node.nodeSize || textContent.length + 2),
+    to: nodeStart + getNodeSize(node),
     cells,
     meta: emptyMeta(),
   };
@@ -199,10 +180,66 @@ function buildRowFromNode(node: any, rowIndex: number, nodeStart: number): GridR
 function getNodeText(node: any): string {
   // For ProseMirror JSON nodes, extract text recursively
   if (node.text) return node.text;
+  if ((node.type?.name || node.type) === 'hardBreak') return ' ';
   if (!node.content) return '';
   return node.content
     .map((child: any) => getNodeText(child))
     .join('');
+}
+
+function walkGridNodes(
+  node: any,
+  nodeStart: number,
+  onRow: (node: any, nodeStart: number) => void,
+): void {
+  if (!node) return;
+
+  if (shouldBuildRow(node)) {
+    onRow(node, nodeStart);
+    return;
+  }
+
+  if (!Array.isArray(node.content)) return;
+
+  const typeName = node.type?.name || node.type;
+  let childStart = typeName === 'doc' ? nodeStart : nodeStart + 1;
+  for (const child of node.content) {
+    walkGridNodes(child, childStart, onRow);
+    childStart += getNodeSize(child);
+  }
+}
+
+function shouldBuildRow(node: any): boolean {
+  const typeName = node.type?.name || node.type;
+
+  if (!typeName || typeName === 'text') return false;
+
+  const containerTypes = new Set([
+    'doc',
+    'bulletList',
+    'orderedList',
+    'blockquote',
+    'taskList',
+    'taskItem',
+    'listItem',
+    'table',
+    'tableRow',
+    'tableCell',
+    'tableHeader',
+    'promotedBlock',
+  ]);
+
+  if (containerTypes.has(typeName)) return false;
+
+  return typeName === 'horizontalRule' || getNodeText(node).trim().length > 0;
+}
+
+function getNodeSize(node: any): number {
+  if (!node) return 0;
+  if (typeof node.nodeSize === 'number') return node.nodeSize;
+  if (typeof node.text === 'string') return node.text.length;
+  if (!Array.isArray(node.content)) return 2;
+  return 2 + node.content.reduce((size: number, child: any) => size + getNodeSize(child), 0);
 }
 
 // ─── Grid Query API ──────────────────────────────────────────

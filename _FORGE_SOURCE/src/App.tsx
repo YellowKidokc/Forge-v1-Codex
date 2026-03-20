@@ -9,7 +9,12 @@ import NodeSidePanel from './components/NodeSidePanel';
 import SettingsPage from './components/SettingsPage';
 import LogicSheet from './components/miniapps/LogicSheet';
 import TruthLayerWorkbench from './components/miniapps/TruthLayerWorkbench';
+import CommandPalette from './components/CommandPalette';
+import VersionBrowser from './components/VersionControl/VersionBrowser';
 import MirrorView from './components/DataMirror/MirrorView';
+import EngineManager from './components/GlobalEngine/EngineManager';
+import IngestionView from './components/DataIngestion/IngestionView';
+import PluginManagerView from './components/PluginManager/PluginManagerView';
 import { FileEntry, NoteMetadata, SavedNotebook, ForgeSettings, MiniApp } from './lib/types';
 // TopCommandBar replaced by BottomBar — do not re-import
 import { DEFAULT_SETTINGS, parseSettings, SETTINGS_STORAGE_KEY } from './lib/settings';
@@ -22,7 +27,7 @@ const ACTIVE_NOTEBOOK_STORAGE_KEY = 'forge_active_notebook_v1';
 
 const EMPTY_METADATA: NoteMetadata = { tags: [], links: [] };
 
-type CenterView = 'editor' | 'logic_sheet' | 'truth_layer' | 'data_mirror';
+type CenterView = 'editor' | 'logic_sheet' | 'truth_layer';
 type PromptMode = 'interface' | 'logic' | 'copilot';
 
 interface PromptPacket {
@@ -71,10 +76,17 @@ function App() {
   const [activeNoteMarkdown, setActiveNoteMarkdown] = useState('');
   const [refreshToken, setRefreshToken] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [versionBrowserOpen, setVersionBrowserOpen] = useState(false);
+  const [mirrorViewOpen, setMirrorViewOpen] = useState(false);
+  const [engineManagerOpen, setEngineManagerOpen] = useState(false);
+  const [ingestionViewOpen, setIngestionViewOpen] = useState(false);
+  const [pluginManagerOpen, setPluginManagerOpen] = useState(false);
   const [settings, setSettings] = useState<ForgeSettings>(DEFAULT_SETTINGS);
   const [centerView, setCenterView] = useState<CenterView>('editor');
   const [filesSnapshot, setFilesSnapshot] = useState<FileEntry[]>([]);
   const [queuedPrompt, setQueuedPrompt] = useState<PromptPacket | null>(null);
+  const [activeChatThreadId, setActiveChatThreadId] = useState<string | null>(null);
   const promptCounterRef = useRef(1);
   const backgroundSignatureRef = useRef<string>('');
   const logicAbortRef = useRef<AbortController | null>(null);
@@ -89,6 +101,10 @@ function App() {
       if ((e.ctrlKey || e.metaKey) && e.key === ',') {
         e.preventDefault();
         setSettingsOpen((prev) => !prev);
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setCommandPaletteOpen((prev) => !prev);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -423,8 +439,28 @@ function App() {
         return true;
       }
 
-      if (command === 'data' || command === 'mirror') {
-        setCenterView('data_mirror');
+      if (command === 'mirror' || command === 'data') {
+        setMirrorViewOpen(true);
+        return true;
+      }
+
+      if (command === 'versions' || command === 'history') {
+        setVersionBrowserOpen(true);
+        return true;
+      }
+
+      if (command === 'engines' || command === 'engine') {
+        setEngineManagerOpen(true);
+        return true;
+      }
+
+      if (command === 'ingest' || command === 'import') {
+        setIngestionViewOpen(true);
+        return true;
+      }
+
+      if (command === 'plugins' || command === 'plugin') {
+        setPluginManagerOpen(true);
         return true;
       }
 
@@ -496,6 +532,13 @@ function App() {
         refreshToken={refreshToken}
         onOpenSettings={() => setSettingsOpen(true)}
         onFilesSnapshotChange={setFilesSnapshot}
+        onSelectChatThread={(id) => {
+          setActiveChatThreadId(id || null);
+          if (id) setAiPanelOpen(true);
+        }}
+        activeChatThreadId={activeChatThreadId}
+        onUseSnippet={(content) => queuePrompt(content, 'interface')}
+        onReorderNotebooks={setSavedNotebooks}
       />
 
       <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
@@ -505,8 +548,6 @@ function App() {
             <LogicSheet open />
           ) : centerView === 'truth_layer' ? (
             <TruthLayerWorkbench open />
-          ) : centerView === 'data_mirror' ? (
-            <MirrorView activeNotebookPath={activeNotebookPath} />
           ) : (
             <>
               <ForgeEditor
@@ -518,6 +559,7 @@ function App() {
                 onSendPromptToAi={(text) => queuePrompt(text, 'interface')}
                 onRunPythonPlan={runPythonPlan}
                 autosaveDelayMs={settings.autosaveDelayMs}
+                onOpenVersions={() => setVersionBrowserOpen(true)}
               />
               <NodeSidePanel
                 filePath={activeFile}
@@ -537,8 +579,8 @@ function App() {
           onOpenAi={() => setAiPanelOpen(true)}
           onOpenLogicSheet={() => setCenterView('logic_sheet')}
           onOpenTruthLayer={() => setCenterView('truth_layer')}
-          onOpenDataMirror={() => setCenterView('data_mirror')}
           miniApps={settings.miniApps}
+          onReorderMiniApps={(apps) => setSettings((prev) => ({ ...prev, miniApps: apps }))}
         />
       </div>
 
@@ -558,6 +600,8 @@ function App() {
         }}
         workspaceContext={workspaceContext}
         aiUseWorkspaceContext={settings.aiUseWorkspaceContext}
+        activeThreadId={activeChatThreadId}
+        onActiveThreadChange={setActiveChatThreadId}
       />
 
       {!aiPanelOpen && (
@@ -580,10 +624,51 @@ function App() {
         onUpdateSettings={setSettings}
         onClose={() => setSettingsOpen(false)}
         onLaunchMiniApp={launchMiniApp}
-        activeNotebookPath={activeNotebookPath}
+      />
+
+      <MirrorView
+        open={mirrorViewOpen}
+        onClose={() => setMirrorViewOpen(false)}
+      />
+
+      <EngineManager
+        open={engineManagerOpen}
+        onClose={() => setEngineManagerOpen(false)}
+      />
+
+      <IngestionView
+        open={ingestionViewOpen}
+        onClose={() => setIngestionViewOpen(false)}
+      />
+
+      <PluginManagerView
+        open={pluginManagerOpen}
+        onClose={() => setPluginManagerOpen(false)}
+      />
+
+      <VersionBrowser
+        open={versionBrowserOpen}
+        onClose={() => setVersionBrowserOpen(false)}
+        filePath={activeFile}
+        currentContent={activeNoteMarkdown}
+        onRollback={() => setRefreshToken((prev) => prev + 1)}
+      />
+
+      <CommandPalette
+        open={commandPaletteOpen}
+        onClose={() => setCommandPaletteOpen(false)}
+        savedNotebooks={savedNotebooks}
+        onActivateNotebook={activateNotebook}
+        onOpenSettings={() => setSettingsOpen(true)}
+        onOpenAi={() => setAiPanelOpen(true)}
+        onSetCenterView={setCenterView}
+        onSubmitPrompt={handlePromptSubmit}
+        settings={settings}
+        onUpdateSettings={setSettings}
       />
     </div>
   );
 }
 
 export default App;
+

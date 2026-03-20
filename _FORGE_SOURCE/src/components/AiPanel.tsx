@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { X, Send, Sparkles, Link2, Hash, Trash2, Bot, Loader2 } from 'lucide-react';
+import { X, Send, Sparkles, Link2, Hash, Trash2, Bot, Loader2, Plus } from 'lucide-react';
 import { NoteMetadata, SavedNotebook } from '../lib/types';
 import { AI_ROLE_LABELS, getAiProvider, getAiRoleRouting, getRoleConfig, hasApiKey, missingKeyMessage, providerLabel, runAiRoleChat, ChatTurn } from '../lib/ai';
 import { appendAiRuntimeEvent, getAiRuntimeEvents, summarizeAiText } from '../lib/aiRuntime';
+import * as chatStore from '../lib/chatStore';
 
 type AiMode = 'interface' | 'logic' | 'copilot';
 
@@ -26,6 +27,8 @@ interface AiPanelProps {
   onConsumeQueuedPrompt?: (id: number) => void;
   workspaceContext: string;
   aiUseWorkspaceContext: boolean;
+  activeThreadId?: string | null;
+  onActiveThreadChange?: (threadId: string | null) => void;
 }
 
 interface ChatMessage {
@@ -47,9 +50,12 @@ const AiPanel = ({
   onConsumeQueuedPrompt,
   workspaceContext,
   aiUseWorkspaceContext,
+  activeThreadId: externalThreadId,
+  onActiveThreadChange,
 }: AiPanelProps) => {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [threadId, setThreadId] = useState<string | null>(null);
   const [streamText, setStreamText] = useState('');
   const [streaming, setStreaming] = useState(false);
   const [mode, setMode] = useState<AiMode>('interface');
@@ -62,6 +68,23 @@ const AiPanel = ({
   const roleRouting = getAiRoleRouting();
   const canSend = hasApiKey(provider);
   const runtimeEvents = useMemo(() => getAiRuntimeEvents().slice(0, 6), [runtimeVersion, open]);
+
+  // Load thread messages when external thread changes or panel opens
+  useEffect(() => {
+    if (!open) return;
+    const id = externalThreadId || chatStore.getActiveThreadId();
+    if (id) {
+      const thread = chatStore.getThread(id);
+      if (thread) {
+        setThreadId(id);
+        setMessages(thread.messages.map((m) => ({ role: m.role, content: m.content })));
+        return;
+      }
+    }
+    // No active thread — start fresh
+    setThreadId(null);
+    setMessages([]);
+  }, [open, externalThreadId]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -97,6 +120,18 @@ const AiPanel = ({
     }
 
     const activeMode = forcedMode ?? mode;
+
+    // Ensure we have a persistent thread
+    let currentThreadId = threadId;
+    if (!currentThreadId) {
+      const newThread = chatStore.createThread();
+      currentThreadId = newThread.id;
+      setThreadId(currentThreadId);
+      chatStore.setActiveThreadId(currentThreadId);
+      onActiveThreadChange?.(currentThreadId);
+    }
+    chatStore.appendMessage(currentThreadId, { role: 'user', content: text, timestamp: Date.now() });
+
     const nextMessages: ChatMessage[] = [...messages, { role: 'user', content: text }];
     setMessages(nextMessages);
     setInput('');
@@ -131,7 +166,11 @@ const AiPanel = ({
             status: 'completed',
           }, 1000 * 45);
           setRuntimeVersion((prev) => prev + 1);
-          setMessages((prev) => [...prev, { role: 'assistant', content: full || '(no output)' }]);
+          const assistantContent = full || '(no output)';
+          if (currentThreadId) {
+            chatStore.appendMessage(currentThreadId, { role: 'assistant', content: assistantContent, timestamp: Date.now() });
+          }
+          setMessages((prev) => [...prev, { role: 'assistant', content: assistantContent }]);
           setStreaming(false);
           setStreamText('');
           abortRef.current = null;
@@ -182,9 +221,23 @@ const AiPanel = ({
           <Sparkles size={14} className="text-forge-ember" />
           <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Tri-Layer AI</span>
         </div>
-        <button onClick={onClose} className="text-gray-500 hover:text-white cursor-pointer">
-          <X size={14} />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              setMessages([]);
+              setThreadId(null);
+              chatStore.setActiveThreadId(null);
+              onActiveThreadChange?.(null);
+            }}
+            className="text-gray-500 hover:text-forge-ember cursor-pointer"
+            title="New chat"
+          >
+            <Plus size={14} />
+          </button>
+          <button onClick={onClose} className="text-gray-500 hover:text-white cursor-pointer">
+            <X size={14} />
+          </button>
+        </div>
       </div>
 
       <div className="px-3 py-2 border-b border-[#222] flex items-center gap-2">

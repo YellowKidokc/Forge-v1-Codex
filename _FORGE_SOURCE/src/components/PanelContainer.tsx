@@ -30,7 +30,7 @@ const PanelContainer: FC<PanelProps> = ({ isOpen, onClose, title, children, side
             animate={{ x: 0 }}
             exit={{ x: isRight ? '100%' : '-100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className={`fixed top-0 ${isRight ? 'right-0' : 'left-0'} w-1/3 h-screen bg-forge-iron border-${isRight ? 'l' : 'r'} border-forge-steel shadow-2xl z-50 flex flex-col`}
+            className={`fixed top-0 ${isRight ? 'right-0 border-l' : 'left-0 border-r'} w-1/3 h-screen bg-forge-iron border-forge-steel shadow-2xl z-50 flex flex-col`}
           >
             <div className="p-6 border-b border-forge-steel flex justify-between items-center">
               <h3 className="text-forge-ember font-black uppercase tracking-widest text-sm">{title}</h3>

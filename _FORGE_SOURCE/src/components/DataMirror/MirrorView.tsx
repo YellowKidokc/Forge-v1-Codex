@@ -1,87 +1,164 @@
-import { useEffect, useMemo, useState } from 'react';
-import { RefreshCw, Plus, FileText } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { X, FolderOpen, FileText, RefreshCw, Download, ChevronRight, ChevronDown } from 'lucide-react';
 import { FileEntry } from '../../lib/types';
-import { createMirror, getMirrorFiles, writeMirrorFile } from '../../lib/mirror';
-
-function flatten(entries: FileEntry[], depth = 0, out: Array<{ entry: FileEntry; depth: number }> = []) {
-  for (const entry of entries) {
-    out.push({ entry, depth });
-    if (entry.children?.length) flatten(entry.children, depth + 1, out);
-  }
-  return out;
-}
+import { ensureMirror, getMirrorFiles, readMirrorFile } from '../../lib/mirror';
 
 interface MirrorViewProps {
-  activeNotebookPath: string | null;
+  open: boolean;
+  onClose: () => void;
 }
 
-export default function MirrorView({ activeNotebookPath }: MirrorViewProps) {
-  const [items, setItems] = useState<FileEntry[]>([]);
-  const [loading, setLoading] = useState(false);
+interface TreeNodeProps {
+  entry: FileEntry;
+  depth: number;
+  onSelect: (path: string) => void;
+}
 
-  const refresh = async () => {
-    if (!activeNotebookPath) return;
+const TreeNode = ({ entry, depth, onSelect }: TreeNodeProps) => {
+  const [expanded, setExpanded] = useState(depth < 1);
+
+  return (
+    <div>
+      <div
+        className={`flex items-center gap-1 px-2 py-1 hover:bg-white/5 cursor-pointer transition-colors`}
+        style={{ paddingLeft: `${depth * 12 + 8}px` }}
+        onClick={() => {
+          if (entry.is_dir) {
+            setExpanded(!expanded);
+          } else {
+            onSelect(entry.path);
+          }
+        }}
+      >
+        {entry.is_dir ? (
+          expanded ? <ChevronDown size={10} className="text-gray-500" /> : <ChevronRight size={10} className="text-gray-500" />
+        ) : (
+          <FileText size={10} className="text-gray-600" />
+        )}
+        <span className={`text-[11px] truncate ${entry.is_dir ? 'text-gray-300' : 'text-gray-400'}`}>
+          {entry.name}
+        </span>
+      </div>
+      {entry.is_dir && expanded && entry.children?.map((child) => (
+        <TreeNode key={child.path} entry={child} depth={depth + 1} onSelect={onSelect} />
+      ))}
+    </div>
+  );
+};
+
+const MirrorView = ({ open, onClose }: MirrorViewProps) => {
+  const [files, setFiles] = useState<FileEntry[]>([]);
+  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+  const [fileContent, setFileContent] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [mirrorPath, setMirrorPath] = useState<string | null>(null);
+
+  const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      await createMirror();
-      setItems(await getMirrorFiles());
-    } catch (error) {
-      console.error('Mirror refresh failed:', error);
+      const path = await ensureMirror();
+      setMirrorPath(path);
+      const entries = await getMirrorFiles();
+      setFiles(entries);
+    } catch (err) {
+      console.error('Failed to load mirror files:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    refresh();
-  }, [activeNotebookPath]);
+    if (open) refresh();
+  }, [open, refresh]);
 
-  const flat = useMemo(() => flatten(items), [items]);
+  const handleSelectFile = async (path: string) => {
+    setSelectedFile(path);
+    try {
+      // Extract relative path from mirror path
+      if (mirrorPath) {
+        const relativePath = path.replace(mirrorPath, '').replace(/^[\\/]/, '');
+        const content = await readMirrorFile(relativePath);
+        setFileContent(content);
+      }
+    } catch (err) {
+      setFileContent(`(Failed to read file: ${err})`);
+    }
+  };
 
-  if (!activeNotebookPath) {
-    return <div className="flex-1 flex items-center justify-center text-gray-600">Select a notebook first.</div>;
-  }
+  if (!open) return null;
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 bg-[#151515]">
-      <div className="px-4 py-2 border-b border-forge-steel flex items-center justify-between">
-        <div>
-          <div className="text-xs uppercase tracking-widest text-forge-ember">Data Mirror</div>
-          <div className="text-[11px] text-gray-500">Generated outputs under <code>_data/</code></div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/60" />
+      <div
+        className="relative w-full max-w-4xl max-h-[80vh] rounded-lg border border-forge-steel bg-[#1a1a1a] shadow-2xl flex flex-col overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="p-4 border-b border-forge-steel flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <FolderOpen size={14} className="text-forge-ember" />
+            <span className="text-sm font-bold uppercase tracking-widest text-gray-400">Data Mirror</span>
+            <span className="text-xs text-gray-600 ml-2 font-mono">{mirrorPath || '_data/'}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={refresh} className="text-gray-500 hover:text-forge-ember cursor-pointer" title="Refresh">
+              <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
+            </button>
+            <button onClick={onClose} className="text-gray-500 hover:text-white cursor-pointer">
+              <X size={14} />
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            className="text-xs px-2 py-1 border border-forge-steel rounded text-gray-300 hover:text-forge-ember cursor-pointer"
-            onClick={async () => {
-              const name = prompt('Output file in _data (example reports/summary.txt):');
-              if (!name?.trim()) return;
-              const body = prompt('Initial content:') ?? '';
-              await writeMirrorFile(name.trim(), body);
-              await refresh();
-            }}
-          >
-            <Plus size={12} className="inline mr-1" /> Output
-          </button>
-          <button onClick={refresh} className="text-gray-500 hover:text-forge-ember cursor-pointer" title="Refresh mirror">
-            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-          </button>
-        </div>
-      </div>
 
-      <div className="flex-1 overflow-auto p-3 font-mono text-xs">
-        {flat.length === 0 ? (
-          <div className="text-gray-600">No mirror files yet.</div>
-        ) : (
-          <div className="space-y-0.5">
-            {flat.map(({ entry, depth }) => (
-              <div key={entry.path} className="flex items-center gap-2 text-gray-300" style={{ paddingLeft: `${depth * 14}px` }}>
-                <FileText size={12} className={entry.is_dir ? 'text-gray-600' : 'text-forge-ember/80'} />
-                <span className={entry.is_dir ? 'text-gray-500' : ''}>{entry.name}</span>
+        <div className="flex flex-1 min-h-0">
+          {/* File tree */}
+          <div className="w-64 border-r border-forge-steel overflow-y-auto">
+            {files.length === 0 && !loading && (
+              <div className="p-4">
+                <p className="text-xs text-gray-600">
+                  No files in the mirror yet. Generated outputs (HTML, CSV, graphs, audio) will appear here.
+                </p>
               </div>
+            )}
+            {files.map((entry) => (
+              <TreeNode key={entry.path} entry={entry} depth={0} onSelect={handleSelectFile} />
             ))}
           </div>
-        )}
+
+          {/* File preview */}
+          <div className="flex-1 overflow-auto p-4">
+            {!selectedFile && (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center space-y-2">
+                  <Download size={24} className="text-gray-700 mx-auto" />
+                  <p className="text-xs text-gray-600">
+                    Select a file to preview its content
+                  </p>
+                  <p className="text-[10px] text-gray-700 max-w-xs">
+                    The data mirror stores all generated outputs: HTML reports, CSV exports,
+                    graphs, audio files, and Python script results. Content stays clean, data stays organized.
+                  </p>
+                </div>
+              </div>
+            )}
+            {selectedFile && (
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs text-gray-400 font-mono truncate">
+                    {selectedFile.split(/[\\/]/).pop()}
+                  </span>
+                </div>
+                <pre className="text-[11px] text-gray-300 font-mono whitespace-pre-wrap bg-black/30 rounded p-3 border border-forge-steel">
+                  {fileContent}
+                </pre>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
-}
+};
+
+export default MirrorView;

@@ -49,6 +49,40 @@ export interface ForgeSettings {
   miniApps: MiniApp[];
 }
 
+// ─── Chat Persistence Types ─────────────────────────────────────
+
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: number;
+}
+
+export interface ChatThread {
+  id: string;
+  title: string;
+  folderId: string | null;
+  pinned: boolean;
+  createdAt: number;
+  updatedAt: number;
+  messages: ChatMessage[];
+}
+
+export interface ChatFolder {
+  id: string;
+  name: string;
+  order: number;
+}
+
+export interface PromptSnippet {
+  id: string;
+  title: string;
+  content: string;
+  tags: string[];
+  order: number;
+}
+
+// ─── Python Sidecar Types ───────────────────────────────────────
+
 export interface PythonSidecarAction {
   type: string;
   [key: string]: unknown;

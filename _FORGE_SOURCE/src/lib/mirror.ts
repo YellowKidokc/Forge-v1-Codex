@@ -1,8 +1,8 @@
 import { invoke } from '@tauri-apps/api/core';
 import { FileEntry } from './types';
 
-export async function createMirror(): Promise<string> {
-  return invoke<string>('create_mirror');
+export async function ensureMirror(): Promise<string> {
+  return invoke<string>('ensure_mirror');
 }
 
 export async function getMirrorFiles(): Promise<FileEntry[]> {
@@ -11,4 +11,8 @@ export async function getMirrorFiles(): Promise<FileEntry[]> {
 
 export async function writeMirrorFile(relativePath: string, content: string): Promise<string> {
   return invoke<string>('write_mirror_file', { relativePath, content });
+}
+
+export async function readMirrorFile(relativePath: string): Promise<string> {
+  return invoke<string>('read_mirror_file', { relativePath });
 }

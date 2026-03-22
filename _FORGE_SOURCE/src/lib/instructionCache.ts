@@ -1,4 +1,4 @@
-import { InlineContext } from '../components/Editor/InlineAiChat';
+import type { InlineContext } from '../components/Editor/InlineAiChat';
 
 export interface CachedInstruction {
   id: string;

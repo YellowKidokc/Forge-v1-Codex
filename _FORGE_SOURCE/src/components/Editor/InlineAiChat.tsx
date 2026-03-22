@@ -35,6 +35,19 @@ export interface InlineContext {
   flags: string[];
 }
 
+function findSelectionCell(row: UseGridReturn['snapshot']['rows'][number], from: number, to: number) {
+  const overlappingCell = row.cells.find((cell) => cell.from < to && cell.to > from);
+  if (overlappingCell) return overlappingCell;
+
+  if (row.cells.length === 0) return null;
+
+  return row.cells.reduce((closest, cell) => {
+    const closestDistance = Math.min(Math.abs(from - closest.from), Math.abs(from - closest.to));
+    const cellDistance = Math.min(Math.abs(from - cell.from), Math.abs(from - cell.to));
+    return cellDistance < closestDistance ? cell : closest;
+  });
+}
+
 function getSelectionContext(editor: Editor, grid: UseGridReturn): InlineContext {
   const { from, to } = editor.state.selection;
   const selectedText = editor.state.doc.textBetween(from, to, ' ').trim();
@@ -51,12 +64,10 @@ function getSelectionContext(editor: Editor, grid: UseGridReturn): InlineContext
       gridRow = row.index;
       nodeType = row.nodeType;
       flags = [...row.meta.flags];
-      for (const cell of row.cells) {
-        if (cell.from <= from && cell.to >= from) {
-          gridCol = cell.col;
-          tags = [...cell.meta.tags];
-          break;
-        }
+      const selectedCell = findSelectionCell(row, from, to);
+      if (selectedCell) {
+        gridCol = selectedCell.col;
+        tags = [...selectedCell.meta.tags];
       }
       break;
     }
@@ -112,9 +123,11 @@ export default function InlineAiChat({ editor, grid, onExecute, onClose }: Inlin
     // Get the DOM coordinates of the selection
     const coords = editor.view.coordsAtPos(from);
     const editorRect = editor.view.dom.getBoundingClientRect();
+    const bubbleWidth = 320;
+    const maxLeft = Math.max(0, editorRect.width - bubbleWidth);
     
     setPosition({
-      x: Math.min(coords.left - editorRect.left, editorRect.width - 340),
+      x: Math.max(0, Math.min(coords.left - editorRect.left, maxLeft)),
       y: coords.bottom - editorRect.top + 8,
     });
 
@@ -180,8 +193,19 @@ export default function InlineAiChat({ editor, grid, onExecute, onClose }: Inlin
         onClose?.();
       }
     };
-    setTimeout(() => window.addEventListener('mousedown', handleClick), 100);
-    return () => window.removeEventListener('mousedown', handleClick);
+
+    let listenerAttached = false;
+    const timeoutId = window.setTimeout(() => {
+      window.addEventListener('mousedown', handleClick);
+      listenerAttached = true;
+    }, 100);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      if (listenerAttached) {
+        window.removeEventListener('mousedown', handleClick);
+      }
+    };
   }, [onClose]);
 
   if (!context) return null;

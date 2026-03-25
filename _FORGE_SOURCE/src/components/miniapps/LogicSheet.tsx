@@ -132,7 +132,7 @@ const LogicSheet = ({ open }: LogicSheetProps) => {
                   return (
                     <td key={id} className={`border border-forge-steel ${isActive ? 'bg-forge-ember/10' : ''}`}>
                       <input
-                        value={shown}
+                        value={isActive ? raw : shown}
                         onFocus={() => setActiveCell(id)}
                         onChange={(event) => setCells((prev) => ({ ...prev, [id]: event.target.value }))}
                         className="w-full bg-transparent px-2 py-1 text-gray-200 outline-none"

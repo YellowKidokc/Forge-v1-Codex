@@ -125,7 +125,7 @@ const ForgeEditor = ({
   }, [editorSettings.spellcheck, editorSettings.autosaveDelayMs]);
 
   // Grid Layer — addressable substrate under the editor
-  const grid = useGrid(editor);
+  const grid = useGrid(editor, filePath);
 
   useEffect(() => {
     if (!filePath || !editor) return;

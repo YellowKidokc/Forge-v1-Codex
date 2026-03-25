@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use sqlx::{postgres::PgPoolOptions, PgPool};
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -7,6 +6,12 @@ use std::process::{Command, Stdio};
 use std::sync::Arc;
 use tauri::State;
 use tokio::sync::Mutex;
+
+#[cfg(feature = "database")]
+use sqlx::{postgres::PgPoolOptions, PgPool};
+
+#[cfg(not(feature = "database"))]
+type PgPool = ();
 
 // ─── Types ───────────────────────────────────────────────────────
 
@@ -637,6 +642,14 @@ async fn toggle_engine(
 
 #[tauri::command]
 async fn connect_db(state: State<'_, AppState>) -> Result<String, String> {
+    #[cfg(not(feature = "database"))]
+    {
+        let _ = state;
+        return Ok("Local mode (database feature disabled)".to_string());
+    }
+
+    #[cfg(feature = "database")]
+    {
     let mut db_lock = state.db.lock().await;
 
     if db_lock.is_some() {
@@ -674,6 +687,7 @@ async fn connect_db(state: State<'_, AppState>) -> Result<String, String> {
             eprintln!("⚠️  Database unavailable - running in local-only mode");
             Ok("Local mode (DB unavailable)".to_string())
         }
+    }
     }
 }
 

@@ -345,11 +345,12 @@ function App() {
       return;
     }
     const noteBody = activeNoteMarkdown.trim();
+    const noteBodySignature = activeNoteMarkdown.replace(/\s+/g, ' ').trim();
     if (!activeFile || noteBody.length < 120) {
       return;
     }
 
-    const signature = `${activeFile}|${noteBody}`;
+    const signature = `${activeFile}|${noteBodySignature}`;
     if (backgroundSignatureRef.current === signature) {
       return;
     }

@@ -27,7 +27,11 @@ const EMPTY_GRID: GridSnapshot = {
   rows: [], version: 0, timestamp: 0, totalRows: 0, totalCells: 0,
 };
 
-export function useGrid(editor: Editor | null) {
+function getMetaStorageKey(persistenceKey: string) {
+  return `forge.grid.meta.v1:${persistenceKey}`;
+}
+
+export function useGrid(editor: Editor | null, persistenceKey?: string | null) {
   const [grid, setGrid] = useState<GridSnapshot>(EMPTY_GRID);
   const rebuildTimerRef = useRef<number | null>(null);
   const metaStoreRef = useRef<string>(''); // serialized metadata to preserve across rebuilds
@@ -35,6 +39,15 @@ export function useGrid(editor: Editor | null) {
   const previousGridRef = useRef<GridSnapshot>(EMPTY_GRID);
   const skipNextRebuildRef = useRef(false);
   const subscribersRef = useRef(new Map<string, Set<(cell: GridCell | null) => void>>());
+
+  useEffect(() => {
+    if (!persistenceKey) {
+      metaStoreRef.current = '';
+      return;
+    }
+    const raw = localStorage.getItem(getMetaStorageKey(persistenceKey));
+    metaStoreRef.current = typeof raw === 'string' ? raw : '';
+  }, [persistenceKey]);
 
   // Rebuild grid from editor document (debounced)
   const rebuildGrid = useCallback(() => {
@@ -82,6 +95,9 @@ export function useGrid(editor: Editor | null) {
     const previousGrid = previousGridRef.current;
     if (metaDirtyRef.current && grid.totalRows > 0) {
       metaStoreRef.current = serializeGridMeta(grid);
+      if (persistenceKey) {
+        localStorage.setItem(getMetaStorageKey(persistenceKey), metaStoreRef.current);
+      }
       metaDirtyRef.current = false;
     }
 
@@ -102,7 +118,7 @@ export function useGrid(editor: Editor | null) {
       callbacks.forEach((callback: (cell: GridCell | null) => void) => callback(cell));
     });
     previousGridRef.current = grid;
-  }, [grid]);
+  }, [grid, persistenceKey]);
 
   // ── Query API ──
   const getCell = useCallback((row: number, col: number): GridCell | null => {

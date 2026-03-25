@@ -462,12 +462,24 @@ async fn rename_item(old_path: String, new_path: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-async fn delete_item(path: String) -> Result<(), String> {
-    let p = PathBuf::from(&path);
-    if p.is_dir() {
-        fs::remove_dir_all(path).map_err(|e| e.to_string())
+async fn delete_item(path: String, state: State<'_, AppState>) -> Result<(), String> {
+    let target = PathBuf::from(&path)
+        .canonicalize()
+        .map_err(|e| format!("Invalid delete path: {}", e))?;
+    let vault = state.vault_path.lock().await;
+    let vault_path = vault.as_ref().ok_or("No vault selected")?;
+    let vault_root = PathBuf::from(vault_path)
+        .canonicalize()
+        .map_err(|e| format!("Invalid vault path: {}", e))?;
+
+    if !target.starts_with(&vault_root) {
+        return Err("Refusing to delete outside active vault".to_string());
+    }
+
+    if target.is_dir() {
+        fs::remove_dir_all(target).map_err(|e| e.to_string())
     } else {
-        fs::remove_file(path).map_err(|e| e.to_string())
+        fs::remove_file(target).map_err(|e| e.to_string())
     }
 }
 
@@ -631,41 +643,38 @@ async fn connect_db(state: State<'_, AppState>) -> Result<String, String> {
         return Ok("Connected".to_string());
     }
 
-    // Try multiple credential combinations
-    let credentials = vec![
-        ("Yellowkid", "Moss9pep2828"),
-        ("postgres", "Yellowkid"),
-        ("lowes", "Moss9pep2828"),
-        ("david", "Moss9pep2828"),
-        ("postgres", "Moss9pep2828"),
-    ];
+    let (user, pass) = match (
+        std::env::var("FORGE_DB_USER"),
+        std::env::var("FORGE_DB_PASS"),
+    ) {
+        (Ok(user), Ok(pass)) => (user, pass),
+        _ => {
+            eprintln!("⚠️  FORGE_DB_USER/FORGE_DB_PASS not set - running in local-only mode");
+            return Ok("Local mode (DB credentials missing)".to_string());
+        }
+    };
 
-    for (user, pass) in credentials {
-        let database_url = format!(
-            "postgres://{}:{}@192.168.1.177:2665/theophysics",
-            user, pass
-        );
+    let database_url = format!(
+        "postgres://{}:{}@192.168.1.177:2665/theophysics",
+        user, pass
+    );
 
-        match PgPoolOptions::new()
-            .max_connections(5)
-            .acquire_timeout(std::time::Duration::from_secs(2))
-            .connect(&database_url)
-            .await
-        {
-            Ok(pool) => {
-                *db_lock = Some(pool);
-                return Ok(format!("Connected as {}", user));
-            }
-            Err(e) => {
-                eprintln!("DB attempt {}: {}", user, e);
-                continue;
-            }
+    match PgPoolOptions::new()
+        .max_connections(5)
+        .acquire_timeout(std::time::Duration::from_secs(2))
+        .connect(&database_url)
+        .await
+    {
+        Ok(pool) => {
+            *db_lock = Some(pool);
+            Ok(format!("Connected as {}", user))
+        }
+        Err(e) => {
+            eprintln!("DB connect failed for {}: {}", user, e);
+            eprintln!("⚠️  Database unavailable - running in local-only mode");
+            Ok("Local mode (DB unavailable)".to_string())
         }
     }
-
-    // Don't block the app - just return local mode message
-    eprintln!("⚠️  Database unavailable - running in local-only mode");
-    Ok("Local mode (DB unavailable)".to_string())
 }
 
 fn resolve_sidecar_script() -> Result<PathBuf, String> {

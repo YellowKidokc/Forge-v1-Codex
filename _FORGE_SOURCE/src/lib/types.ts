@@ -40,6 +40,25 @@ export interface AiRoleConfig {
 
 export interface ForgeSettings {
   autosaveDelayMs: number;
+  editorFontFamily: string;
+  editorFontSize: number;
+  editorLineHeight: number;
+  editorMaxWidth: number;
+  editorTheme: 'dark' | 'darker' | 'midnight';
+  editorAccentColor: string;
+  spellcheck: boolean;
+  vimMode: boolean;
+  showLineNumbers: boolean;
+  tabSize: 2 | 4 | 8;
+  autoPairBrackets: boolean;
+  foldHeadings: boolean;
+  defaultNewNoteLocation: 'root' | 'same-folder';
+  trashMethod: 'system' | 'vault-trash' | 'permanent';
+  excludedFolders: string[];
+  attachmentFolder: string;
+  enableBackgroundAi: boolean;
+  backgroundAiDebounce: number;
+  aiMaxTokens: 1024 | 2048 | 4096 | 8192;
   aiUseWorkspaceContext: boolean;
   aiProvider: AiProvider;
   aiRoleRouting: AiRoleRouting;
@@ -48,6 +67,23 @@ export interface ForgeSettings {
   topPromptBarEnabled: boolean;
   miniApps: MiniApp[];
 }
+
+export type EditorSettings = Pick<
+  ForgeSettings,
+  | 'autosaveDelayMs'
+  | 'editorFontFamily'
+  | 'editorFontSize'
+  | 'editorLineHeight'
+  | 'editorMaxWidth'
+  | 'editorTheme'
+  | 'editorAccentColor'
+  | 'spellcheck'
+  | 'vimMode'
+  | 'showLineNumbers'
+  | 'tabSize'
+  | 'autoPairBrackets'
+  | 'foldHeadings'
+>;
 
 export interface PythonSidecarAction {
   type: string;

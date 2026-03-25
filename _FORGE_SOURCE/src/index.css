@@ -7,7 +7,15 @@
 }
 
 :root {
-  background-color: #1a1a1a;
+  --forge-bg: #1a1a1a;
+  --forge-bg-secondary: #161616;
+  --forge-panel: #111115;
+  --forge-accent: #e8a912;
+  --forge-editor-font-family: "Inter", system-ui, sans-serif;
+  --forge-editor-font-size: 17px;
+  --forge-editor-line-height: 1.7;
+  --forge-tab-size: 4;
+  background-color: var(--forge-bg, #1a1a1a);
   color: #e0e0e0;
 }
 
@@ -18,7 +26,7 @@ html {
 body {
   margin: 0;
   padding: 0;
-  background-color: #1a1a1a;
+  background-color: var(--forge-bg, #1a1a1a);
   color: #e0e0e0;
   font-family: "Inter", system-ui, -apple-system, sans-serif;
   font-size: 1rem;
@@ -55,9 +63,11 @@ body {
 .forge-editor-content {
   outline: none;
   min-height: 60vh;
-  font-size: 17px;
-  line-height: 1.7;
+  font-family: var(--forge-editor-font-family, "Inter", system-ui, sans-serif);
+  font-size: var(--forge-editor-font-size, 17px);
+  line-height: var(--forge-editor-line-height, 1.7);
   color: #d4d4d4;
+  tab-size: var(--forge-tab-size, 4);
 }
 
 .forge-editor-content > *:first-child {
@@ -79,6 +89,27 @@ body {
   line-height: 1.15;
   border-bottom: 1px solid rgba(255,77,0,0.12);
   padding-bottom: 0.3em;
+}
+
+.forge-editor-lines .forge-editor-content {
+  counter-reset: forge-line;
+}
+
+.forge-editor-lines .forge-editor-content p {
+  position: relative;
+  padding-left: 2.2rem;
+  counter-increment: forge-line;
+}
+
+.forge-editor-lines .forge-editor-content p::before {
+  content: counter(forge-line);
+  position: absolute;
+  left: 0;
+  width: 1.6rem;
+  text-align: right;
+  color: #666;
+  font-size: 0.8em;
+  font-family: "JetBrains Mono", "Fira Code", monospace;
 }
 
 .forge-editor-content h2 {

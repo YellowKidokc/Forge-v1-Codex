@@ -19,6 +19,8 @@ function escapeHtml(text: string): string {
 function processInline(text: string): string {
   const escaped = escapeHtml(text);
   return escaped
+    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img alt="$1" src="$2" />')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
     .replace(/`(.+?)`/g, '<code>$1</code>');
@@ -67,7 +69,7 @@ export function markdownToHtml(md: string): string {
       if (promoMatch) {
         text = text.replace(PROMOTED_BLOCK_RE, '');
         blocks.push(
-          `<div data-type="promoted-block" data-block-id="${promoMatch[1]}">` +
+          `<div data-type="promoted-block" data-block-id="${escapeAttribute(promoMatch[1])}">` +
           `<h${level}>${processInline(text)}</h${level}>` +
           `</div>`
         );
@@ -97,15 +99,52 @@ export function markdownToHtml(md: string): string {
     }
 
     // Unordered list
-    if (/^\s*[-*+]\s/.test(line)) {
+    if (/^\s*[-*+]\s/.test(line) && !/^\s*[-*+]\s\[( |x|X)\]\s/.test(line)) {
       const listItems: string[] = [];
-      while (i < lines.length && /^\s*[-*+]\s/.test(lines[i])) {
+      while (i < lines.length && /^\s*[-*+]\s/.test(lines[i]) && !/^\s*[-*+]\s\[( |x|X)\]\s/.test(lines[i])) {
         listItems.push(lines[i].replace(/^\s*[-*+]\s/, ''));
         i++;
       }
       blocks.push(
         '<ul>' +
         listItems.map(item => `<li><p>${processInline(item)}</p></li>`).join('') +
+        '</ul>'
+      );
+      continue;
+    }
+
+    // Ordered list
+    if (/^\s*\d+\.\s/.test(line)) {
+      const listItems: string[] = [];
+      while (i < lines.length && /^\s*\d+\.\s/.test(lines[i])) {
+        listItems.push(lines[i].replace(/^\s*\d+\.\s/, ''));
+        i++;
+      }
+      blocks.push(
+        '<ol>' +
+        listItems.map(item => `<li><p>${processInline(item)}</p></li>`).join('') +
+        '</ol>'
+      );
+      continue;
+    }
+
+    // Task list
+    if (/^\s*[-*+]\s\[( |x|X)\]\s/.test(line)) {
+      const taskItems: string[] = [];
+      while (i < lines.length && /^\s*[-*+]\s\[( |x|X)\]\s/.test(lines[i])) {
+        taskItems.push(lines[i]);
+        i++;
+      }
+      blocks.push(
+        '<ul data-type="taskList">' +
+        taskItems
+          .map((task) => {
+            const match = task.match(/^\s*[-*+]\s\[( |x|X)\]\s(.*)$/);
+            const checked = match?.[1]?.toLowerCase() === 'x';
+            const body = processInline(match?.[2] ?? '');
+            return `<li data-type="taskItem"><label><input type="checkbox" ${checked ? 'checked ' : ''}disabled /></label><div><p>${body}</p></div></li>`;
+          })
+          .join('') +
         '</ul>'
       );
       continue;
@@ -125,7 +164,7 @@ export function markdownToHtml(md: string): string {
     if (promoMatch) {
       paraText = paraText.replace(PROMOTED_BLOCK_RE, '');
       blocks.push(
-        `<div data-type="promoted-block" data-block-id="${promoMatch[1]}">` +
+        `<div data-type="promoted-block" data-block-id="${escapeAttribute(promoMatch[1])}">` +
         `<p>${processInline(paraText)}</p>` +
         `</div>`
       );
@@ -167,14 +206,48 @@ function serializeNode(node: any): string {
       return (node.content || [])
         .map((item: any) => serializeNode(item))
         .join('\n');
-    
+
+    case 'orderedList':
+      return (node.content || [])
+        .map((item: any, idx: number) => `${idx + 1}. ${serializeNode(item).replace(/^- /, '')}`)
+        .join('\n');
+
+    case 'taskList':
+      return (node.content || [])
+        .map((item: any) => serializeNode(item))
+        .join('\n');
+
     case 'listItem':
       return '- ' + (node.content || [])
         .map((child: any) => serializeNode(child))
         .join('\n  ');
-    
+
+    case 'taskItem': {
+      const checked = node.attrs?.checked ? 'x' : ' ';
+      const body = (node.content || [])
+        .map((child: any) => serializeNode(child))
+        .join(' ')
+        .trim();
+      return `- [${checked}] ${body}`;
+    }
+
     case 'horizontalRule':
       return '---';
+
+    case 'image': {
+      const alt = node.attrs?.alt || '';
+      const src = node.attrs?.src || '';
+      return src ? `![${alt}](${src})` : '';
+    }
+
+    case 'table': {
+      const rows = node.content || [];
+      if (!rows.length) return '';
+      const markdownRows = rows.map((row: any) => serializeTableRow(row));
+      const firstCols = rows[0]?.content?.length ?? 0;
+      const divider = `| ${Array.from({ length: firstCols }).map(() => '---').join(' | ')} |`;
+      return [markdownRows[0], divider, ...markdownRows.slice(1)].join('\n');
+    }
     
     case 'promotedBlock': {
       const blockId = node.attrs?.blockId || '';
@@ -214,11 +287,30 @@ function serializeInline(content: any[] | undefined): string {
           case 'code':
             text = `\`${text}\``;
             break;
+          case 'link': {
+            const href = mark.attrs?.href;
+            if (typeof href === 'string' && href.trim().length > 0) {
+              text = `[${text}](${href})`;
+            }
+            break;
+          }
         }
       }
     }
     return text;
   }).join('');
+}
+
+function serializeTableRow(rowNode: any): string {
+  const cells = (rowNode?.content || []).map((cellNode: any) => {
+    const text = (cellNode?.content || [])
+      .map((child: any) => serializeNode(child))
+      .join(' ')
+      .replace(/\|/g, '\\|')
+      .trim();
+    return text;
+  });
+  return `| ${cells.join(' | ')} |`;
 }
 
 // Generate a short unique block ID

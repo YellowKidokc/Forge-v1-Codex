@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, type MutableRefObject } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import Sidebar from './components/Sidebar';
@@ -10,10 +10,10 @@ import SettingsPage from './components/SettingsPage';
 import LogicSheet from './components/miniapps/LogicSheet';
 import TruthLayerWorkbench from './components/miniapps/TruthLayerWorkbench';
 import MirrorView from './components/DataMirror/MirrorView';
-import { FileEntry, NoteMetadata, SavedNotebook, ForgeSettings, MiniApp } from './lib/types';
+import { FileEntry, NoteMetadata, SavedNotebook, ForgeSettings, MiniApp, EditorSettings } from './lib/types';
 // TopCommandBar replaced by BottomBar — do not re-import
 import { DEFAULT_SETTINGS, parseSettings, SETTINGS_STORAGE_KEY } from './lib/settings';
-import { getRoleConfig, providerLabel, runAiRoleChat, type ChatTurn } from './lib/ai';
+import { clearAiSettingsCache, getRoleConfig, providerLabel, runAiRoleChat, type ChatTurn } from './lib/ai';
 import { appendAiRuntimeEvent, summarizeAiText } from './lib/aiRuntime';
 import { runPythonSidecar } from './lib/pythonSidecar';
 
@@ -61,6 +61,24 @@ function flattenEntryNames(entries: FileEntry[], out: string[] = [], depth = 0):
   return out;
 }
 
+function useDebouncedValue<T>(value: T, delayMs: number): T {
+  const [debounced, setDebounced] = useState(value);
+  const seqRef = useRef(0);
+
+  useEffect(() => {
+    seqRef.current += 1;
+    const current = seqRef.current;
+    const timeout = window.setTimeout(() => {
+      if (seqRef.current === current) {
+        setDebounced(value);
+      }
+    }, delayMs);
+    return () => window.clearTimeout(timeout);
+  }, [value, delayMs]);
+
+  return debounced;
+}
+
 function App() {
   const [activeFile, setActiveFile] = useState<string | null>(null);
   const [, setModified] = useState(false);
@@ -69,6 +87,7 @@ function App() {
   const [activeNotebookPath, setActiveNotebookPath] = useState<string | null>(null);
   const [noteMetadata, setNoteMetadata] = useState<NoteMetadata>(EMPTY_METADATA);
   const [activeNoteMarkdown, setActiveNoteMarkdown] = useState('');
+  const debouncedNoteMarkdown = useDebouncedValue(activeNoteMarkdown, 1000);
   const [refreshToken, setRefreshToken] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settings, setSettings] = useState<ForgeSettings>(DEFAULT_SETTINGS);
@@ -101,7 +120,21 @@ function App() {
 
   useEffect(() => {
     localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+    clearAiSettingsCache();
   }, [settings]);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const themeVars: { bg: string; bgSecondary: string; panel: string } = {
+      dark: { bg: '#1a1a1a', bgSecondary: '#161616', panel: '#111115' },
+      darker: { bg: '#111115', bgSecondary: '#0f1014', panel: '#0b0c10' },
+      midnight: { bg: '#0a0a0f', bgSecondary: '#07070b', panel: '#06060a' },
+    }[settings.editorTheme];
+    root.style.setProperty('--forge-bg', themeVars.bg);
+    root.style.setProperty('--forge-bg-secondary', themeVars.bgSecondary);
+    root.style.setProperty('--forge-panel', themeVars.panel);
+    root.style.setProperty('--forge-accent', settings.editorAccentColor);
+  }, [settings.editorTheme, settings.editorAccentColor]);
 
   useEffect(() => {
     let parsed: SavedNotebook[] = [];
@@ -244,8 +277,8 @@ function App() {
 
   const workspaceContext = useMemo(() => {
     const fileNames = flattenEntryNames(filesSnapshot).join(', ');
-    const noteExcerpt = activeNoteMarkdown.trim()
-      ? activeNoteMarkdown.replace(/\s+/g, ' ').slice(0, 4000)
+    const noteExcerpt = debouncedNoteMarkdown.trim()
+      ? debouncedNoteMarkdown.replace(/\s+/g, ' ').slice(0, 4000)
       : 'none';
     return [
       `Active notebook: ${activeNotebookPath || 'none'}`,
@@ -255,7 +288,23 @@ function App() {
       `Visible files: ${fileNames || 'none'}`,
       `Current note excerpt: ${noteExcerpt}`,
     ].join('\n');
-  }, [activeNotebookPath, activeFile, noteMetadata.tags, noteMetadata.links, filesSnapshot, activeNoteMarkdown]);
+  }, [activeNotebookPath, activeFile, noteMetadata.tags, noteMetadata.links, filesSnapshot, debouncedNoteMarkdown]);
+
+  const editorSettings: EditorSettings = useMemo(() => ({
+    autosaveDelayMs: settings.autosaveDelayMs,
+    editorFontFamily: settings.editorFontFamily,
+    editorFontSize: settings.editorFontSize,
+    editorLineHeight: settings.editorLineHeight,
+    editorMaxWidth: settings.editorMaxWidth,
+    editorTheme: settings.editorTheme,
+    editorAccentColor: settings.editorAccentColor,
+    spellcheck: settings.spellcheck,
+    vimMode: settings.vimMode,
+    showLineNumbers: settings.showLineNumbers,
+    tabSize: settings.tabSize,
+    autoPairBrackets: settings.autoPairBrackets,
+    foldHeadings: settings.foldHeadings,
+  }), [settings]);
 
   const runPythonPlan = useCallback(
     async (prompt: string, selection?: string): Promise<boolean> => {
@@ -292,6 +341,9 @@ function App() {
   );
 
   useEffect(() => {
+    if (!settings.enableBackgroundAi) {
+      return;
+    }
     const noteBody = activeNoteMarkdown.trim();
     if (!activeFile || noteBody.length < 120) {
       return;
@@ -315,51 +367,63 @@ function App() {
       const runBackgroundRole = async (
         role: 'logic' | 'copilot',
         prompt: string,
-        abortRef: React.MutableRefObject<AbortController | null>
+        abortRef: MutableRefObject<AbortController | null>
       ) => {
         if (abortRef.current) {
           abortRef.current.abort();
+          abortRef.current = null;
         }
 
         const controller = new AbortController();
         abortRef.current = controller;
         const roleConfig = getRoleConfig(role);
         let fullText = '';
-
-        await runAiRoleChat(
-          role,
-          sharedMessages,
-          {
-            onToken: (token) => {
-              fullText += token;
+        try {
+          await runAiRoleChat(
+            role,
+            sharedMessages,
+            {
+              onToken: (token) => {
+                fullText += token;
+              },
+              onComplete: () => {
+                appendAiRuntimeEvent({
+                  role,
+                  kind: 'message',
+                  summary: summarizeAiText(fullText || '(no output)'),
+                  provider: providerLabel(roleConfig.provider),
+                  model: roleConfig.model,
+                  status: 'completed',
+                }, 1000 * 60 * 12);
+              },
+              onError: (error) => {
+                appendAiRuntimeEvent({
+                  role,
+                  kind: 'error',
+                  summary: summarizeAiText(error),
+                  provider: providerLabel(roleConfig.provider),
+                  model: roleConfig.model,
+                  status: 'failed',
+                }, 1000 * 60 * 6);
+              },
             },
-            onComplete: () => {
-              appendAiRuntimeEvent({
-                role,
-                kind: 'message',
-                summary: summarizeAiText(fullText || '(no output)'),
-                provider: providerLabel(roleConfig.provider),
-                model: roleConfig.model,
-                status: 'completed',
-              }, 1000 * 60 * 12);
-              abortRef.current = null;
-            },
-            onError: (error) => {
-              appendAiRuntimeEvent({
-                role,
-                kind: 'error',
-                summary: summarizeAiText(error),
-                provider: providerLabel(roleConfig.provider),
-                model: roleConfig.model,
-                status: 'failed',
-              }, 1000 * 60 * 6);
-              abortRef.current = null;
-            },
-          },
-          controller.signal,
-          settings.aiUseWorkspaceContext ? `Workspace context:\n${workspaceContext}` : '',
-          prompt
-        );
+            controller.signal,
+            settings.aiUseWorkspaceContext ? `Workspace context:\n${workspaceContext}` : '',
+            prompt
+          );
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Background AI failed';
+          appendAiRuntimeEvent({
+            role,
+            kind: 'error',
+            summary: summarizeAiText(message),
+            provider: providerLabel(roleConfig.provider),
+            model: roleConfig.model,
+            status: 'failed',
+          }, 1000 * 60 * 6);
+        } finally {
+          abortRef.current = null;
+        }
       };
 
       void runBackgroundRole(
@@ -372,12 +436,16 @@ function App() {
         'Background copilot scan. Suggest the next 2-3 highest-leverage actions for the current note. Be concrete, brief, and execution-focused.',
         copilotAbortRef
       );
-    }, 6000);
+    }, settings.backgroundAiDebounce);
 
     return () => {
       window.clearTimeout(timeout);
+      logicAbortRef.current?.abort();
+      logicAbortRef.current = null;
+      copilotAbortRef.current?.abort();
+      copilotAbortRef.current = null;
     };
-  }, [activeFile, activeNoteMarkdown, settings.aiUseWorkspaceContext, workspaceContext]);
+  }, [activeFile, activeNoteMarkdown, settings.enableBackgroundAi, settings.backgroundAiDebounce, settings.aiUseWorkspaceContext, workspaceContext]);
 
   const handlePromptSubmit = useCallback(
     async (prompt: string): Promise<boolean> => {
@@ -482,7 +550,10 @@ function App() {
   );
 
   return (
-    <div className="flex h-screen w-screen bg-[#1a1a1a] text-white overflow-hidden font-sans">
+    <div
+      className="flex h-screen w-screen text-white overflow-hidden font-sans"
+      style={{ backgroundColor: 'var(--forge-bg, #1a1a1a)' }}
+    >
       <Sidebar
         onFileSelect={(path) => {
           setCenterView('editor');
@@ -517,7 +588,8 @@ function App() {
                 onOpenWikiLink={openOrCreateLinkedNote}
                 onSendPromptToAi={(text) => queuePrompt(text, 'interface')}
                 onRunPythonPlan={runPythonPlan}
-                autosaveDelayMs={settings.autosaveDelayMs}
+                editorSettings={editorSettings}
+                workspaceContext={workspaceContext}
               />
               <NodeSidePanel
                 filePath={activeFile}

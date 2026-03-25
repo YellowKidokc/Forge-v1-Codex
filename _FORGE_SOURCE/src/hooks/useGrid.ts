@@ -31,11 +31,18 @@ export function useGrid(editor: Editor | null) {
   const [grid, setGrid] = useState<GridSnapshot>(EMPTY_GRID);
   const rebuildTimerRef = useRef<number | null>(null);
   const metaStoreRef = useRef<string>(''); // serialized metadata to preserve across rebuilds
+  const metaDirtyRef = useRef(false);
+  const previousGridRef = useRef<GridSnapshot>(EMPTY_GRID);
+  const skipNextRebuildRef = useRef(false);
   const subscribersRef = useRef(new Map<string, Set<(cell: GridCell | null) => void>>());
 
   // Rebuild grid from editor document (debounced)
   const rebuildGrid = useCallback(() => {
     if (!editor) return;
+    if (skipNextRebuildRef.current) {
+      skipNextRebuildRef.current = false;
+      return;
+    }
     
     // Get TipTap's ProseMirror document as JSON
     const doc = editor.getJSON();
@@ -56,7 +63,7 @@ export function useGrid(editor: Editor | null) {
     const handler = () => {
       // Debounce rebuilds to avoid thrashing on every keystroke
       if (rebuildTimerRef.current) clearTimeout(rebuildTimerRef.current);
-      rebuildTimerRef.current = window.setTimeout(rebuildGrid, 150);
+      rebuildTimerRef.current = window.setTimeout(rebuildGrid, 700);
     };
 
     editor.on('update', handler);
@@ -72,15 +79,29 @@ export function useGrid(editor: Editor | null) {
 
   // Persist metadata when grid changes
   useEffect(() => {
-    if (grid.totalRows > 0) {
+    const previousGrid = previousGridRef.current;
+    if (metaDirtyRef.current && grid.totalRows > 0) {
       metaStoreRef.current = serializeGridMeta(grid);
+      metaDirtyRef.current = false;
     }
 
     subscribersRef.current.forEach((callbacks: Set<(cell: GridCell | null) => void>, key: string) => {
       const [rowText, colText] = key.split(':');
-      const cell = _getCell(grid, Number(rowText), Number(colText));
+      const row = Number(rowText);
+      const col = Number(colText);
+      const cell = _getCell(grid, row, col);
+      const prevCell = _getCell(previousGrid, row, col);
+      if (
+        prevCell?.word === cell?.word &&
+        prevCell?.from === cell?.from &&
+        prevCell?.to === cell?.to &&
+        JSON.stringify(prevCell?.meta ?? null) === JSON.stringify(cell?.meta ?? null)
+      ) {
+        return;
+      }
       callbacks.forEach((callback: (cell: GridCell | null) => void) => callback(cell));
     });
+    previousGridRef.current = grid;
   }, [grid]);
 
   // ── Query API ──
@@ -114,22 +135,27 @@ export function useGrid(editor: Editor | null) {
 
   // ── Mutation API ──
   const addTag = useCallback((row: number, col: number, tag: string) => {
+    metaDirtyRef.current = true;
     setGrid(prev => addTagToCell(prev, row, col, tag));
   }, []);
 
   const setFlag = useCallback((row: number, flag: string) => {
+    metaDirtyRef.current = true;
     setGrid(prev => addFlagToRow(prev, row, flag));
   }, []);
 
   const removeFlag = useCallback((row: number, flag: string) => {
+    metaDirtyRef.current = true;
     setGrid(prev => removeFlagFromRow(prev, row, flag));
   }, []);
 
   const updateCellMeta = useCallback((row: number, col: number, meta: Partial<CellMeta>) => {
+    metaDirtyRef.current = true;
     setGrid(prev => setCellMeta(prev, row, col, meta));
   }, []);
 
   const updateRowMeta = useCallback((row: number, meta: Partial<CellMeta>) => {
+    metaDirtyRef.current = true;
     setGrid(prev => setRowMeta(prev, row, meta));
   }, []);
 
@@ -180,10 +206,10 @@ export function useGrid(editor: Editor | null) {
     if (!editor) return false;
     const cell = _getCell(grid, row, col);
     if (!cell) return false;
+    skipNextRebuildRef.current = true;
     editor.chain().focus().setTextSelection({ from: cell.from, to: cell.to }).insertContent(value).run();
-    setTimeout(rebuildGrid, 0);
     return true;
-  }, [editor, grid, rebuildGrid]);
+  }, [editor, grid]);
 
   const subscribe = useCallback((row: number, col: number, callback: (cell: GridCell | null) => void) => {
     const key = `${row}:${col}`;

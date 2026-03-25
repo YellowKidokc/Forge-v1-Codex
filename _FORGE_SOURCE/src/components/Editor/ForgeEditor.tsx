@@ -15,11 +15,12 @@ import EditorToolbar from './EditorToolbar';
 import { markdownToHtml, tiptapJsonToMarkdown } from '../../lib/markdown';
 import { invoke } from '@tauri-apps/api/core';
 import { Save } from 'lucide-react';
-import { NoteMetadata } from '../../lib/types';
+import { EditorSettings, NoteMetadata } from '../../lib/types';
 import { extractNoteMetadata } from '../../lib/noteMeta';
 import { useGrid } from '../../hooks/useGrid';
-import InlineAiChat from './InlineAiChat';
+import InlineAiChat, { InlineContext } from './InlineAiChat';
 import GridLayer from './GridLayer';
+import { runAiRoleChat, type ChatTurn } from '../../lib/ai';
 
 interface EditorContextMenu {
   x: number;
@@ -35,11 +36,21 @@ interface ForgeEditorProps {
   onOpenWikiLink?: (target: string) => void;
   onSendPromptToAi?: (prompt: string) => void;
   onRunPythonPlan?: (prompt: string, selection?: string) => Promise<boolean>;
-  autosaveDelayMs?: number;
+  editorSettings: EditorSettings;
+  workspaceContext?: string;
 }
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 const ForgeEditor = ({
@@ -50,9 +61,11 @@ const ForgeEditor = ({
   onOpenWikiLink,
   onSendPromptToAi,
   onRunPythonPlan,
-  autosaveDelayMs = 2000,
+  editorSettings,
+  workspaceContext = '',
 }: ForgeEditorProps) => {
   const saveTimeoutRef = useRef<number | null>(null);
+  const metadataTimeoutRef = useRef<number | null>(null);
   const lastSavedRef = useRef<string>('');
   const isLoadingRef = useRef(false);
   const [contextMenu, setContextMenu] = useState<EditorContextMenu | null>(null);
@@ -65,6 +78,7 @@ const ForgeEditor = ({
   const [buildStory, setBuildStory] = useState(false);
   const [showGrid, setShowGrid] = useState(false);
   const [showInlineChat, setShowInlineChat] = useState(false);
+  const inlineAiAbortRef = useRef<AbortController | null>(null);
 
   const editor = useEditor({
     extensions: [
@@ -86,23 +100,29 @@ const ForgeEditor = ({
     editorProps: {
       attributes: {
         class: 'forge-editor-content',
+        spellcheck: String(editorSettings.spellcheck),
       },
     },
     onUpdate: ({ editor: editorInstance }) => {
       if (isLoadingRef.current) return;
       onContentChange?.(true);
       const markdown = tiptapJsonToMarkdown(editorInstance.getJSON());
-      onMetadataChange?.(extractNoteMetadata(markdown));
-      onDocumentSnapshot?.(markdown);
+      if (metadataTimeoutRef.current) {
+        clearTimeout(metadataTimeoutRef.current);
+      }
+      metadataTimeoutRef.current = window.setTimeout(() => {
+        onMetadataChange?.(extractNoteMetadata(markdown));
+        onDocumentSnapshot?.(markdown);
+      }, 1000);
 
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
       saveTimeoutRef.current = window.setTimeout(() => {
         saveCurrentFile(editorInstance, markdown);
-      }, autosaveDelayMs);
+      }, editorSettings.autosaveDelayMs);
     },
-  });
+  }, [editorSettings.spellcheck, editorSettings.autosaveDelayMs]);
 
   // Grid Layer — addressable substrate under the editor
   const grid = useGrid(editor);
@@ -122,7 +142,7 @@ const ForgeEditor = ({
       })
       .catch((err) => {
         console.error('Failed to load file:', err);
-        editor.commands.setContent(`<p>Error loading file: ${err}</p>`);
+        editor.commands.setContent(`<p>Error loading file: ${escapeHtml(String(err))}</p>`);
       })
       .finally(() => {
         setTimeout(() => {
@@ -130,6 +150,20 @@ const ForgeEditor = ({
         }, 100);
       });
   }, [filePath, editor, onContentChange, onMetadataChange, onDocumentSnapshot]);
+
+  useEffect(() => {
+    if (editorSettings.vimMode) {
+      console.info('FORGE vim mode is coming soon.');
+    }
+  }, [editorSettings.vimMode]);
+
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+      if (metadataTimeoutRef.current) clearTimeout(metadataTimeoutRef.current);
+      if (inlineAiAbortRef.current) inlineAiAbortRef.current.abort();
+    };
+  }, []);
 
   useEffect(() => {
     if (filePath) return;
@@ -268,7 +302,61 @@ const ForgeEditor = ({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [getSelectionText, saveCurrentFile]);
+  }, [getSelectionText, saveCurrentFile, editor]);
+
+  const handleInlineExecute = useCallback(async (instruction: string, ctx: InlineContext) => {
+    if (inlineAiAbortRef.current) {
+      inlineAiAbortRef.current.abort();
+    }
+    const controller = new AbortController();
+    inlineAiAbortRef.current = controller;
+    const messages: ChatTurn[] = [
+      {
+        role: 'user',
+        content: [
+          `INSTRUCTION: ${instruction}`,
+          `SELECTED TEXT: ${ctx.selectedText}`,
+          ctx.gridRow !== null ? `GRID POSITION: Row ${ctx.gridRow}, Col ${ctx.gridCol}` : '',
+          ctx.nodeType ? `NODE TYPE: ${ctx.nodeType}` : '',
+          ctx.tags.length > 0 ? `TAGS: ${ctx.tags.join(', ')}` : '',
+          ctx.flags.length > 0 ? `FLAGS: ${ctx.flags.join(', ')}` : '',
+          ctx.surroundingText ? `CONTEXT:\n${ctx.surroundingText}` : '',
+          'Return ONLY the result text.',
+        ].filter(Boolean).join('\n'),
+      },
+    ];
+    let responseText = '';
+    let responseError: string | null = null;
+    try {
+      await runAiRoleChat(
+        'interface',
+        messages,
+        {
+          onToken: (token) => {
+            responseText += token;
+          },
+          onComplete: (fullText) => {
+            responseText = fullText || responseText;
+          },
+          onError: (error) => {
+            responseError = error;
+          },
+        },
+        controller.signal,
+        workspaceContext ? `Workspace context:\n${workspaceContext}` : ''
+      );
+      if (responseError) {
+        throw new Error(responseError);
+      }
+      if (!responseText.trim() && onSendPromptToAi) {
+        onSendPromptToAi(messages[0].content);
+        return 'Inline AI was empty. Sent to AI panel fallback.';
+      }
+      return responseText || 'No response returned.';
+    } finally {
+      inlineAiAbortRef.current = null;
+    }
+  }, [workspaceContext, onSendPromptToAi]);
 
   if (!filePath) {
     return (
@@ -335,7 +423,16 @@ const ForgeEditor = ({
             event.preventDefault();
           }}
         >
-          <div className="max-w-3xl mx-auto py-8 px-6 relative">
+          <div
+            className={`mx-auto py-8 px-6 relative ${editorSettings.showLineNumbers ? 'forge-editor-lines' : ''}`}
+            style={{
+              maxWidth: `${editorSettings.editorMaxWidth}px`,
+              ['--forge-editor-font-family' as string]: editorSettings.editorFontFamily,
+              ['--forge-editor-font-size' as string]: `${editorSettings.editorFontSize}px`,
+              ['--forge-editor-line-height' as string]: String(editorSettings.editorLineHeight),
+              ['--forge-tab-size' as string]: String(editorSettings.tabSize),
+            }}
+          >
             <EditorContent editor={editor} />
             {/* Inline AI Chat bubble */}
             {showInlineChat && (
@@ -343,26 +440,7 @@ const ForgeEditor = ({
                 editor={editor}
                 grid={grid}
                 onClose={() => setShowInlineChat(false)}
-                onExecute={async (instruction, ctx) => {
-                  // Build AI prompt with grid context
-                  const prompt = [
-                    `INSTRUCTION: ${instruction}`,
-                    `SELECTED TEXT: ${ctx.selectedText}`,
-                    ctx.gridRow !== null ? `GRID POSITION: Row ${ctx.gridRow}, Col ${ctx.gridCol}` : '',
-                    ctx.nodeType ? `NODE TYPE: ${ctx.nodeType}` : '',
-                    ctx.tags.length > 0 ? `TAGS: ${ctx.tags.join(', ')}` : '',
-                    ctx.flags.length > 0 ? `FLAGS: ${ctx.flags.join(', ')}` : '',
-                    ctx.surroundingText ? `CONTEXT:\n${ctx.surroundingText}` : '',
-                    'Return ONLY the result. No explanations.',
-                  ].filter(Boolean).join('\n');
-                  
-                  // Use the existing AI chat handler if available
-                  if (onSendPromptToAi) {
-                    onSendPromptToAi(prompt);
-                    return 'Sent to AI panel. Check the sidebar for response.';
-                  }
-                  return 'AI handler not connected. Configure in Settings.';
-                }}
+                onExecute={handleInlineExecute}
               />
             )}
           </div>

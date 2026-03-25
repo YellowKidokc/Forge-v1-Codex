@@ -16,6 +16,14 @@ const OPENAI_MODEL = 'gpt-4.1';
 const AI_PROVIDER_STORAGE_KEY = 'forge_ai_provider';
 const ANTHROPIC_KEY_STORAGE = 'forge_anthropic_key';
 const OPENAI_KEY_STORAGE = 'forge_openai_key';
+const DEFAULT_AI_MAX_TOKENS: 1024 | 2048 | 4096 | 8192 = 2048;
+let cachedAiMaxTokens: 1024 | 2048 | 4096 | 8192 | null = null;
+
+function parseAiMaxTokens(value: unknown): 1024 | 2048 | 4096 | 8192 {
+  return value === 1024 || value === 2048 || value === 4096 || value === 8192
+    ? value
+    : DEFAULT_AI_MAX_TOKENS;
+}
 
 export type AiCommand = 'probe' | 'east' | 'connect';
 export type ChatRole = 'user' | 'assistant';
@@ -111,6 +119,29 @@ export function getAiRoleRouting(): AiRoleRouting {
   }
 }
 
+export function clearAiSettingsCache(): void {
+  cachedAiMaxTokens = null;
+}
+
+export function getAiMaxTokens(): 1024 | 2048 | 4096 | 8192 {
+  if (cachedAiMaxTokens !== null) {
+    return cachedAiMaxTokens;
+  }
+  const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
+  if (!raw) {
+    cachedAiMaxTokens = DEFAULT_AI_MAX_TOKENS;
+    return cachedAiMaxTokens;
+  }
+  try {
+    const parsed = JSON.parse(raw);
+    cachedAiMaxTokens = parseAiMaxTokens(parsed?.aiMaxTokens);
+    return cachedAiMaxTokens;
+  } catch {
+    cachedAiMaxTokens = DEFAULT_AI_MAX_TOKENS;
+    return cachedAiMaxTokens;
+  }
+}
+
 function getSettingsBlob(): Record<string, unknown> | null {
   const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
   if (!raw) return null;
@@ -200,7 +231,7 @@ async function streamAnthropic(
       },
       body: JSON.stringify({
         model: ANTHROPIC_MODEL,
-        max_tokens: 2048,
+        max_tokens: getAiMaxTokens(),
         stream: true,
         system: systemPrompt,
         messages,
@@ -291,6 +322,7 @@ async function streamOpenAi(
       },
       body: JSON.stringify({
         model: OPENAI_MODEL,
+        max_tokens: getAiMaxTokens(),
         stream: true,
         messages: [
           { role: 'system', content: systemPrompt },
@@ -378,6 +410,9 @@ async function streamOllama(
       body: JSON.stringify({
         model,
         stream: true,
+        options: {
+          num_predict: getAiMaxTokens(),
+        },
         messages: [
           { role: 'system', content: systemPrompt },
           ...messages,

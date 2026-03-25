@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshCw, Plus, FileText } from 'lucide-react';
 import { FileEntry } from '../../lib/types';
 import { createMirror, getMirrorFiles, writeMirrorFile } from '../../lib/mirror';
@@ -19,7 +19,7 @@ export default function MirrorView({ activeNotebookPath }: MirrorViewProps) {
   const [items, setItems] = useState<FileEntry[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     if (!activeNotebookPath) return;
     setLoading(true);
     try {
@@ -30,11 +30,11 @@ export default function MirrorView({ activeNotebookPath }: MirrorViewProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeNotebookPath]);
 
   useEffect(() => {
-    refresh();
-  }, [activeNotebookPath]);
+    void refresh();
+  }, [refresh]);
 
   const flat = useMemo(() => flatten(items), [items]);
 

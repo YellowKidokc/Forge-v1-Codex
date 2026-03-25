@@ -186,8 +186,10 @@ export function parseSettings(raw: string | null): ForgeSettings {
           : DEFAULT_SETTINGS.enableBackgroundAi,
       backgroundAiDebounce: normalizeBackgroundDebounce(parsed?.backgroundAiDebounce),
       aiMaxTokens: normalizeAiMaxTokens(parsed?.aiMaxTokens),
-      // Force context sharing on so every AI mode sees current work context.
-      aiUseWorkspaceContext: true,
+      aiUseWorkspaceContext:
+        typeof parsed?.aiUseWorkspaceContext === 'boolean'
+          ? parsed.aiUseWorkspaceContext
+          : DEFAULT_SETTINGS.aiUseWorkspaceContext,
       aiProvider: parseProvider(parsed?.aiProvider),
       aiRoleRouting: parseRoleRouting(parsed?.aiRoleRouting),
       ollamaModel: normalizeOllamaModel(parsed?.ollamaModel),

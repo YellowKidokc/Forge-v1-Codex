@@ -133,7 +133,8 @@ const ForgeEditor = ({
       })
       .catch((err) => {
         console.error('Failed to load file:', err);
-        editor.commands.setContent(`<p>Error loading file: ${err}</p>`);
+        const errMsg = err instanceof Error ? err.message : String(err);
+        editor.commands.setContent({ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: `Error loading file: ${errMsg}` }] }] });
       })
       .finally(() => {
         setTimeout(() => {
@@ -293,7 +294,7 @@ const ForgeEditor = ({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [getSelectionText, saveCurrentFile]);
+  }, [editor, getSelectionText, saveCurrentFile]);
 
   const handleInlineExecute = useCallback(async (instruction: string, ctx: InlineContext) => {
     if (inlineAiAbortRef.current) {

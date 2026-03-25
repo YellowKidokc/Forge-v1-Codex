@@ -370,7 +370,8 @@ function App() {
         abortRef: MutableRefObject<AbortController | null>
       ) => {
         if (abortRef.current) {
-          return;
+          abortRef.current.abort();
+          abortRef.current = null;
         }
 
         const controller = new AbortController();

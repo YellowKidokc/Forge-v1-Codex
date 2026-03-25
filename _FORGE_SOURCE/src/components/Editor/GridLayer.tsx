@@ -28,7 +28,7 @@ function GridLayerBase({ editor, grid }: GridLayerProps) {
       endIndex: end,
       visibleRows: grid.snapshot.rows.slice(start, end),
     };
-  }, [grid.snapshot.rows, scrollTop, totalRows]);
+  }, [grid.snapshot.rows, scrollTop, totalRows, viewportHeight]);
 
   useEffect(() => {
     const node = containerRef.current;

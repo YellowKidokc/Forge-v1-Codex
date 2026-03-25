@@ -67,7 +67,7 @@ export function markdownToHtml(md: string): string {
       if (promoMatch) {
         text = text.replace(PROMOTED_BLOCK_RE, '');
         blocks.push(
-          `<div data-type="promoted-block" data-block-id="${promoMatch[1]}">` +
+          `<div data-type="promoted-block" data-block-id="${escapeAttribute(promoMatch[1])}">` +
           `<h${level}>${processInline(text)}</h${level}>` +
           `</div>`
         );
@@ -125,7 +125,7 @@ export function markdownToHtml(md: string): string {
     if (promoMatch) {
       paraText = paraText.replace(PROMOTED_BLOCK_RE, '');
       blocks.push(
-        `<div data-type="promoted-block" data-block-id="${promoMatch[1]}">` +
+        `<div data-type="promoted-block" data-block-id="${escapeAttribute(promoMatch[1])}">` +
         `<p>${processInline(paraText)}</p>` +
         `</div>`
       );

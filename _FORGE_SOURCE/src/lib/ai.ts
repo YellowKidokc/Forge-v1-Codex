@@ -129,11 +129,12 @@ export function getAiMaxTokens(): 1024 | 2048 | 4096 | 8192 {
   try {
     const parsed = JSON.parse(raw);
     const value = parsed?.aiMaxTokens;
-    cachedAiMaxTokens = value === 1024 || value === 4096 || value === 8192 ? value : DEFAULT_AI_MAX_TOKENS;
-    return cachedAiMaxTokens;
+    const resolved: 1024 | 2048 | 4096 | 8192 = value === 1024 || value === 2048 || value === 4096 || value === 8192 ? value : DEFAULT_AI_MAX_TOKENS;
+    cachedAiMaxTokens = resolved;
+    return resolved;
   } catch {
     cachedAiMaxTokens = DEFAULT_AI_MAX_TOKENS;
-    return cachedAiMaxTokens;
+    return DEFAULT_AI_MAX_TOKENS;
   }
 }
 

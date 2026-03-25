@@ -33,7 +33,7 @@ export default function MirrorView({ activeNotebookPath }: MirrorViewProps) {
   }, [activeNotebookPath]);
 
   useEffect(() => {
-    refresh();
+    void refresh();
   }, [refresh]);
 
   const flat = useMemo(() => flatten(items), [items]);

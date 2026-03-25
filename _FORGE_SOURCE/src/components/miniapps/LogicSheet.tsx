@@ -123,8 +123,12 @@ const LogicSheet = ({ open }: LogicSheetProps) => {
                 {Array.from({ length: COLS }).map((_, col) => {
                   const id = cellId(col, row);
                   const raw = cells[id] || '';
-                  const shown = raw.startsWith('=') ? evaluateFormula(raw, cells) : raw;
                   const isActive = id === activeCell;
+                  const shown = isActive
+                    ? raw
+                    : raw.startsWith('=')
+                      ? evaluateFormula(raw, cells)
+                      : raw;
                   return (
                     <td key={id} className={`border border-forge-steel ${isActive ? 'bg-forge-ember/10' : ''}`}>
                       <input

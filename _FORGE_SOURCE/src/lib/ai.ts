@@ -19,6 +19,12 @@ const OPENAI_KEY_STORAGE = 'forge_openai_key';
 const DEFAULT_AI_MAX_TOKENS: 1024 | 2048 | 4096 | 8192 = 2048;
 let cachedAiMaxTokens: 1024 | 2048 | 4096 | 8192 | null = null;
 
+function parseAiMaxTokens(value: unknown): 1024 | 2048 | 4096 | 8192 {
+  return value === 1024 || value === 2048 || value === 4096 || value === 8192
+    ? value
+    : DEFAULT_AI_MAX_TOKENS;
+}
+
 export type AiCommand = 'probe' | 'east' | 'connect';
 export type ChatRole = 'user' | 'assistant';
 
@@ -128,13 +134,11 @@ export function getAiMaxTokens(): 1024 | 2048 | 4096 | 8192 {
   }
   try {
     const parsed = JSON.parse(raw);
-    const value = parsed?.aiMaxTokens;
-    const resolved: 1024 | 2048 | 4096 | 8192 = value === 1024 || value === 2048 || value === 4096 || value === 8192 ? value : DEFAULT_AI_MAX_TOKENS;
-    cachedAiMaxTokens = resolved;
-    return resolved;
+    cachedAiMaxTokens = parseAiMaxTokens(parsed?.aiMaxTokens);
+    return cachedAiMaxTokens;
   } catch {
     cachedAiMaxTokens = DEFAULT_AI_MAX_TOKENS;
-    return DEFAULT_AI_MAX_TOKENS;
+    return cachedAiMaxTokens;
   }
 }
 

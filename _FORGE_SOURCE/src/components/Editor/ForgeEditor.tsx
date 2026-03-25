@@ -44,6 +44,15 @@ function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 const ForgeEditor = ({
   filePath,
   onContentChange,
@@ -133,8 +142,7 @@ const ForgeEditor = ({
       })
       .catch((err) => {
         console.error('Failed to load file:', err);
-        const errMsg = err instanceof Error ? err.message : String(err);
-        editor.commands.setContent({ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: `Error loading file: ${errMsg}` }] }] });
+        editor.commands.setContent(`<p>Error loading file: ${escapeHtml(String(err))}</p>`);
       })
       .finally(() => {
         setTimeout(() => {
@@ -294,7 +302,7 @@ const ForgeEditor = ({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [editor, getSelectionText, saveCurrentFile]);
+  }, [getSelectionText, saveCurrentFile, editor]);
 
   const handleInlineExecute = useCallback(async (instruction: string, ctx: InlineContext) => {
     if (inlineAiAbortRef.current) {

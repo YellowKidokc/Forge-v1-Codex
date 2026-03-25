@@ -59,6 +59,9 @@ function readState(): AnnotationState {
 }
 
 function writeState(state: AnnotationState) {
+  state.anchors = state.anchors.slice(0, MAX_ANCHORS);
+  state.displayRules = state.displayRules.slice(0, MAX_DISPLAY_RULES);
+  state.macros = state.macros.slice(0, MAX_MACROS);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
